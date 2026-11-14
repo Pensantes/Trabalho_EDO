@@ -97,6 +97,17 @@
         );
         animation: drift2 58s ease-in-out infinite alternate;
       }
+      #btnTurbo.on {
+        background: linear-gradient(135deg, var(--amber), var(--orange));
+        border-color: transparent;
+        color: #201000;
+        box-shadow: 0 0 18px rgba(255, 176, 46, 0.55);
+      }
+      #warpBadge {
+        color: var(--amber);
+        border-color: rgba(255, 176, 46, 0.5);
+        box-shadow: 0 0 12px rgba(255, 176, 46, 0.18);
+      }
       @keyframes drift1 {
         from {
           transform: translate(-4%, -2%) rotate(0deg);
@@ -991,7 +1002,11 @@
       </div>
       <div class="clock" id="clock">T−00:00.0</div>
       <span class="pill ok" id="statusPill">PRONTO</span>
+      <span class="pill fly" id="warpBadge" style="display: none">⏩ 1×</span>
       <div class="spacer"></div>
+      <button class="icon" id="btnTurbo" title="Fast-forward máximo (F)">
+        ⏩
+      </button>
       <button class="icon" id="btnSound" title="Som (M)">🔊</button>
       <button class="icon" id="btnPause" title="Pausar (Espaço)" disabled>
         ⏸
@@ -1519,19 +1534,31 @@
         <div class="ctl-group">
           <h4>⚙️ SIMULAÇÃO & CÂMERA</h4>
           <div class="ctl">
-            <label>Velocidade do tempo</label
-            ><select id="cWarp">
+            <label>Velocidade do tempo<output id="oWarp">1×</output></label>
+            <select id="cWarp">
               <option value="0.5">0.5×</option>
               <option value="1" selected>1×</option>
               <option value="2">2×</option>
               <option value="4">4×</option>
               <option value="8">8×</option>
               <option value="16">16×</option>
+              <option value="32">32×</option>
+              <option value="64">64×</option>
+              <option value="128">128×</option>
+              <option value="max">⏩ MÁX (CPU)</option>
             </select>
+            <p class="note">
+              dt fixo = 1/60 s (a resolução temporal nunca muda).<br />
+              <span id="oWarpEff">—</span>
+            </p>
           </div>
           <div class="ctl">
             <label>Zoom da câmera<output id="oZoom">0.55 px/m</output></label
             ><input type="range" id="cZoom" min="0" max="100" value="55" />
+          </div>
+          <div class="ctl">
+            <label>Encaixe dos estágios<output id="oJoin">12%</output></label>
+            <input type="range" id="cJoin" min="0" max="30" value="20" />
           </div>
           <div class="ctl">
             <label>Partículas</label
@@ -1558,6 +1585,49 @@
           </div>
         </div>
         <div class="ctl-group">
+          <div class="ctl-group">
+            <h4>🖼 SPRITE & CORTES</h4>
+            <div class="switchrow">
+              Corte automático
+              <label class="switch"
+                ><input type="checkbox" id="cSpriteAuto" checked /><i></i
+              ></label>
+            </div>
+            <div class="ctl">
+              <label>Corte S3 / S2<output id="oCut1">33%</output></label>
+              <input
+                type="range"
+                id="cCut1"
+                min="0"
+                max="100"
+                step="0.1"
+                value="33"
+              />
+            </div>
+            <div class="ctl">
+              <label>Corte S2 / S1<output id="oCut2">66%</output></label>
+              <input
+                type="range"
+                id="cCut2"
+                min="0"
+                max="100"
+                step="0.1"
+                value="66"
+              />
+            </div>
+            <div class="chart-box" style="height: 220px; margin-bottom: 8px">
+              <canvas id="spritePreview"></canvas>
+            </div>
+            <div class="btnrow">
+              <button id="btnReslice">✂ Re-fatiar</button>
+              <button id="btnAutoCuts">🎯 Auto</button>
+            </div>
+            <p class="note">
+              O detector acha os <b>2 maiores vãos</b> entre os estágios e corta
+              no centro. Se errar, desligue o automático e ajuste os cortes
+              olhando o preview (S3 = topo, S1 = base).
+            </p>
+          </div>
           <h4>🎛️ AÇÕES</h4>
           <div class="btnrow">
             <button id="btnRand">🎲 Aleatório</button
@@ -1592,8 +1662,8 @@
     <script>
       "use strict";
       /* ============================================================
-   1. UTILITÁRIOS
-============================================================ */
+         1. UTILITÁRIOS
+      ============================================================ */
       const $ = (id) => document.getElementById(id);
       const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
       const lerp = (a, b, t) => a + (b - a) * t;
@@ -1652,8 +1722,8 @@
       }
 
       /* ============================================================
-   2. FÍSICA — porto fiel dos notebooks
-============================================================ */
+         2. FÍSICA — porto fiel dos notebooks
+      ============================================================ */
       const R = 6356766,
         G0 = 9.80665,
         T0 = 288.15,
@@ -1791,8 +1861,8 @@
       ];
 
       /* ============================================================
-   3. CONFIGURAÇÃO AJUSTÁVEL
-============================================================ */
+         3. CONFIGURAÇÃO AJUSTÁVEL
+      ============================================================ */
       const DEFAULTS = {
         thr: 100,
         flows: [14000, 1000, 600],
@@ -1814,6 +1884,7 @@
         guides: true,
         trail: true,
         follow: true,
+        join: 12,
       };
       const cfg = JSON.parse(JSON.stringify(DEFAULTS));
       cfg.flows = [...DEFAULTS.flows];
@@ -1837,8 +1908,8 @@
       }
 
       /* ============================================================
-   4. ESTADO DA MISSÃO
-============================================================ */
+         4. ESTADO DA MISSÃO
+      ============================================================ */
       let S = null,
         samples = [],
         events = [],
@@ -2189,8 +2260,8 @@
       }
 
       /* ============================================================
-   5. SOM — sintetizado, ligado ao que acontece na tela
-============================================================ */
+         5. SOM — sintetizado, ligado ao que acontece na tela
+      ============================================================ */
       const Sound = {
         ctx: null,
         master: null,
@@ -2264,8 +2335,8 @@
       };
 
       /* ============================================================
-   6. SPRITE — fatiamento automático em 3 estágios + fallback
-============================================================ */
+         6. SPRITE — fatiamento automático em 3 estágios + fallback
+      ============================================================ */
       let spriteSlices = null,
         spriteSource = "procedural";
       function sliceImage(img) {
@@ -2464,10 +2535,310 @@
         rd.onload = () => loadSpriteFromURL(rd.result);
         rd.readAsDataURL(file);
       }
+      /* ============================================================
+   6B. SPRITE — corte robusto por vãos + ajuste manual com preview
+   (sobrescreve o fatiamento da seção 6)
+   ============================================================ */
+      let spriteImg = null,
+        spriteInfo = null,
+        spriteAuto = true;
+
+      function analyzeSprite(img) {
+        const w = img.naturalWidth || img.width,
+          h = img.naturalHeight || img.height;
+        const cv = document.createElement("canvas");
+        cv.width = w;
+        cv.height = h;
+        const cx = cv.getContext("2d", { willReadFrequently: true });
+        cx.drawImage(img, 0, 0);
+        let data;
+        try {
+          data = cx.getImageData(0, 0, w, h).data;
+        } catch (e) {
+          return null;
+        }
+        const px = (x, y) => {
+          const i = (y * w + x) * 4;
+          return [data[i], data[i + 1], data[i + 2], data[i + 3]];
+        };
+        const corners = [
+          px(0, 0),
+          px(w - 1, 0),
+          px(0, h - 1),
+          px(w - 1, h - 1),
+        ];
+        const transparentBG = corners.filter((c) => c[3] < 40).length >= 3;
+        let bg = null;
+        if (!transparentBG) {
+          const op = corners.filter((c) => c[3] > 200);
+          if (op.length >= 3)
+            bg = [0, 1, 2].map(
+              (k) => op.reduce((a, c) => a + c[k], 0) / op.length,
+            );
+        }
+        const isContent = (i) => {
+          if (data[i + 3] < 40) return false;
+          if (transparentBG) return true;
+          if (bg) {
+            const d =
+              Math.abs(data[i] - bg[0]) +
+              Math.abs(data[i + 1] - bg[1]) +
+              Math.abs(data[i + 2] - bg[2]);
+            return d > 60;
+          }
+          return data[i] + data[i + 1] + data[i + 2] > 90;
+        };
+        /* perfil de linhas: threshold baixo para não perder a torre de escape */
+        const rows = new Uint8Array(h);
+        for (let y = 0; y < h; y++) {
+          let c = 0;
+          const off = y * w * 4;
+          for (let x = 0; x < w; x++) if (isContent(off + x * 4)) c++;
+          rows[y] = c > Math.max(2, w * 0.002) ? 1 : 0;
+        }
+        let top = 0;
+        while (top < h && !rows[top]) top++;
+        let bot = h - 1;
+        while (bot > top && !rows[bot]) bot--;
+        if (bot <= top) return null;
+        bot++;
+        /* vãos internos (runs de linhas vazias) */
+        const gaps = [];
+        let gs = -1;
+        for (let y = top; y <= bot; y++) {
+          const off = y === bot || !rows[y];
+          if (off && gs < 0) gs = y;
+          if (!off && gs >= 0) {
+            gaps.push([gs, y]);
+            gs = -1;
+          }
+        }
+        const minGap = Math.max(3, h * 0.004);
+        const big = gaps
+          .filter((g) => g[1] - g[0] >= minGap)
+          .sort((a, b) => b[1] - b[0] - (a[1] - a[0]));
+        let cuts;
+        if (big.length >= 2) {
+          const two = big.slice(0, 2).sort((a, b) => a[0] - b[0]);
+          cuts = two.map((g) => (g[0] + g[1]) / 2);
+        } else {
+          cuts = [top + (bot - top) / 3, top + (2 * (bot - top)) / 3];
+        }
+        return { cv, w, h, top, bot, cuts, isContent };
+      }
+
+      function slicesFromCuts(info, cutYs) {
+        const { cv, w, isContent } = info;
+        const ys = [info.top, cutYs[0], cutYs[1], info.bot].map(Math.round);
+        for (let i = 1; i < 4; i++) ys[i] = Math.max(ys[i], ys[i - 1] + 4);
+        const out = [];
+        for (let k = 0; k < 3; k++) {
+          const y0 = ys[k],
+            y1 = Math.min(ys[k + 1], info.h);
+          let x0 = w,
+            x1 = 0;
+          for (let y = y0; y < y1; y++) {
+            const off = y * w * 4;
+            for (let x = 0; x < w; x++) {
+              if (isContent(off + x * 4)) {
+                if (x < x0) x0 = x;
+                if (x > x1) x1 = x;
+              }
+            }
+          }
+          if (x1 <= x0) {
+            x0 = 0;
+            x1 = w - 1;
+          }
+          x0 = Math.max(0, x0 - 2);
+          x1 = Math.min(w - 1, x1 + 2);
+          const sw = x1 - x0 + 1,
+            sh = Math.max(1, y1 - y0);
+          const sc = document.createElement("canvas");
+          sc.width = sw;
+          sc.height = sh;
+          sc.getContext("2d").drawImage(cv, x0, y0, sw, sh, 0, 0, sw, sh);
+          out.push(sc);
+        }
+        return [out[2], out[1], out[0]]; /* índice 0 = S1 (base) */
+      }
+
+      function currentCutYs() {
+        if (!spriteInfo) return null;
+        if (spriteAuto) return spriteInfo.cuts;
+        const h = spriteInfo.h;
+        let c1 = (parseFloat($("cCut1").value) / 100) * h;
+        let c2 = (parseFloat($("cCut2").value) / 100) * h;
+        c1 = clamp(c1, spriteInfo.top + 4, spriteInfo.bot - 8);
+        c2 = clamp(c2, c1 + 4, spriteInfo.bot - 4);
+        return [c1, c2];
+      }
+
+      function syncCutOutputs(cuts) {
+        if (!spriteInfo) return;
+        const h = spriteInfo.h;
+        const p1 = (cuts[0] / h) * 100,
+          p2 = (cuts[1] / h) * 100;
+        if (spriteAuto) {
+          $("cCut1").value = p1.toFixed(1);
+          $("cCut2").value = p2.toFixed(1);
+        }
+        $("oCut1").textContent = p1.toFixed(1) + "%";
+        $("oCut2").textContent = p2.toFixed(1) + "%";
+      }
+
+      function resliceSprite() {
+        if (!spriteInfo) return;
+        const cuts = currentCutYs();
+        setSprite(slicesFromCuts(spriteInfo, cuts), "arquivo");
+        syncCutOutputs(cuts);
+        drawSpritePreview();
+      }
+
+      function drawSpritePreview() {
+        const cv = $("spritePreview");
+        if (!cv) return;
+        const par = cv.parentElement.getBoundingClientRect();
+        if (par.width < 20 || par.height < 20) return;
+        const dpr = Math.min(devicePixelRatio || 1, 2);
+        const W = par.width,
+          H = par.height;
+        cv.width = W * dpr;
+        cv.height = H * dpr;
+        cv.style.width = W + "px";
+        cv.style.height = H + "px";
+        const c = cv.getContext("2d");
+        c.setTransform(dpr, 0, 0, dpr, 0, 0);
+        c.fillStyle = "#0a1120";
+        c.fillRect(0, 0, W, H);
+        if (spriteImg && spriteInfo) {
+          const info = spriteInfo;
+          const scale = Math.min((W * 0.5) / info.w, (H - 16) / info.h);
+          const dw = info.w * scale,
+            dh = info.h * scale;
+          const dx = W * 0.28 - dw / 2,
+            dy = (H - dh) / 2;
+          c.drawImage(spriteImg, dx, dy, dw, dh);
+          const cuts = currentCutYs() || info.cuts;
+          const ys = [info.top, cuts[0], cuts[1], info.bot];
+          const cols = [
+            "rgba(232,121,249,.14)",
+            "rgba(160,107,255,.14)",
+            "rgba(34,211,238,.14)",
+          ];
+          const names = ["S3", "S2", "S1"];
+          for (let k = 0; k < 3; k++) {
+            const y0 = dy + ys[k] * scale,
+              y1 = dy + ys[k + 1] * scale;
+            c.fillStyle = cols[k];
+            c.fillRect(dx, y0, dw, y1 - y0);
+            c.fillStyle = "#e9eef8";
+            c.font = "bold 11px Cascadia Code,Consolas,monospace";
+            c.textAlign = "left";
+            c.fillText(names[k], dx + dw + 10, (y0 + y1) / 2 + 4);
+          }
+          c.setLineDash([5, 4]);
+          c.lineWidth = 1.5;
+          for (let k = 0; k < 2; k++) {
+            const y = dy + cuts[k] * scale;
+            c.strokeStyle = k === 0 ? "#e879f9" : "#22d3ee";
+            c.beginPath();
+            c.moveTo(dx - 8, y);
+            c.lineTo(dx + dw + 8, y);
+            c.stroke();
+          }
+          c.setLineDash([]);
+        } else if (spriteSlices) {
+          const totalH = spriteSlices.reduce((a, s) => a + s.height, 0);
+          const maxW = Math.max(...spriteSlices.map((s) => s.width));
+          const scale = Math.min((W * 0.5) / maxW, (H - 16) / totalH);
+          let y = (H - totalH * scale) / 2;
+          const names = ["S1", "S2", "S3"];
+          for (let i = 2; i >= 0; i--) {
+            const s = spriteSlices[i];
+            const dw = s.width * scale,
+              dh = s.height * scale;
+            c.drawImage(s, W * 0.28 - dw / 2, y, dw, dh);
+            c.fillStyle = "#93a1ba";
+            c.font = "10px Cascadia Code,Consolas,monospace";
+            c.textAlign = "left";
+            c.fillText(
+              names[i],
+              W * 0.28 + (maxW * scale) / 2 + 10,
+              y + dh / 2,
+            );
+            y += dh;
+          }
+        }
+      }
+
+      /* sobrescreve as funções da seção 6 */
+      function setSprite(slices, source) {
+        spriteSlices = slices;
+        spriteSource = source;
+        $("hudSprite").textContent = "SPRITE: " + source.toUpperCase();
+        $("spriteNote").innerHTML =
+          source === "arquivo"
+            ? "✅ Sprite fatiado em <b>3 estágios</b>. Ajuste os cortes no grupo 🖼 SPRITE & CORTES se necessário."
+            : "⚠️ Usando sprite procedural. Coloque a imagem ao lado de <b>main.py</b> ou carregue aqui / arraste sobre o canvas.";
+        drawSpritePreview();
+      }
+
+      function loadSpriteFromURL(url) {
+        const img = new Image();
+        img.onload = () => {
+          spriteImg = img;
+          spriteInfo = analyzeSprite(img);
+          if (spriteInfo) {
+            spriteAuto = true;
+            $("cSpriteAuto").checked = true;
+            resliceSprite();
+            toast("🖼 Sprite carregado — cortes automáticos aplicados");
+          } else {
+            setSprite(proceduralSprite(), "procedural");
+          }
+        };
+        img.onerror = () => {
+          spriteImg = null;
+          spriteInfo = null;
+          setSprite(proceduralSprite(), "procedural");
+        };
+        img.src = url;
+      }
+
+      function bindSpriteControls() {
+        $("cSpriteAuto").addEventListener("change", (e) => {
+          spriteAuto = e.target.checked;
+          resliceSprite();
+        });
+        const manual = () => {
+          if (spriteAuto) {
+            spriteAuto = false;
+            $("cSpriteAuto").checked = false;
+          }
+          resliceSprite();
+        };
+        $("cCut1").addEventListener("input", manual);
+        $("cCut2").addEventListener("input", manual);
+        $("btnReslice").addEventListener("click", () => {
+          resliceSprite();
+          toast("✂ Sprite re-fatiado");
+        });
+        $("btnAutoCuts").addEventListener("click", () => {
+          spriteAuto = true;
+          $("cSpriteAuto").checked = true;
+          resliceSprite();
+          toast("🎯 Cortes automáticos aplicados");
+        });
+        new ResizeObserver(drawSpritePreview).observe(
+          $("spritePreview").parentElement,
+        );
+      }
+      bindSpriteControls();
 
       /* ============================================================
-   7. MOTOR DE GRÁFICOS (canvas, sem libs)
-============================================================ */
+         7. MOTOR DE GRÁFICOS (canvas, sem libs)
+      ============================================================ */
       class Chart {
         constructor(id, opt) {
           this.cv = $(id);
@@ -2734,8 +3105,8 @@
       }
 
       /* ============================================================
-   8. GRÁFICOS — instâncias
-============================================================ */
+         8. GRÁFICOS — instâncias
+      ============================================================ */
       const charts = {};
       function buildCharts() {
         charts.alt = new Chart("chAlt", {
@@ -2937,8 +3308,8 @@
       }
 
       /* ============================================================
-   9. COLUNAS ATMOSFÉRICAS (gradientes) + RENDER DE VOO
-============================================================ */
+         9. COLUNAS ATMOSFÉRICAS (gradientes) + RENDER DE VOO
+      ============================================================ */
       function tempColor(T) {
         const t = clamp((T - 180) / 120, 0, 1);
         const hue = lerp(225, 10, t);
@@ -3318,19 +3689,38 @@
           c.fill();
           c.restore();
         }
-        /* pilha de estágios restantes */
-        let yOff = 0;
+        /* pilha de estágios restantes — estágios superiores DESCEN um pouco
+         (bocais encaixados) e são pintados ATRÁS do estágio de baixo */
+        const stack = [];
         for (let i = Math.min(S.stage, 2); i < 3; i++) {
-          if (S.stage === 3 && i < 3) {
-            /* coasting: só S3 continua */ if (i !== 2) continue;
-          }
-          const dim = stageDims(i),
-            w = dim.w * cam.scale,
-            h = dim.h * cam.scale;
-          c.drawImage(spriteSlices[i], -w / 2, -yOff - h, w, h);
-          yOff += h;
+          if (S.stage === 3 && i !== 2) continue; // coasting: só S3
+          stack.push(i);
         }
-        c.restore();
+
+        /* calcula a base (y) de cada estágio, aplicando o encaixe na junção */
+        const geo = [];
+        let b = 0; // base do estágio mais baixo = origem do foguete
+        for (let k = 0; k < stack.length; k++) {
+          const i = stack[k];
+          const dim = stageDims(i);
+          const h = dim.h * cam.scale,
+            w = dim.w * cam.scale;
+          geo.push({ i, b, h, w });
+          // o próximo estágio (de cima) entra `join%` da SUA própria altura
+          const upper = stack[k + 1];
+          const ov =
+            upper !== undefined
+              ? stageDims(upper).h * cam.scale * (cfg.join / 100)
+              : 0;
+          b = b - h + ov; // desce o estágio de cima para dentro deste
+        }
+
+        /* pinta de CIMA para BAIXO → o estágio de baixo fica na frente,
+         escondendo os bocais sobrepostos (efeito "encaixado") */
+        for (let k = geo.length - 1; k >= 0; k--) {
+          const g = geo[k];
+          c.drawImage(spriteSlices[g.i], -g.w / 2, g.b - g.h, g.w, g.h);
+        }
         /* emissão de partículas */
         if (thrNow > 0.02 && phase === "flight" && !paused) {
           const n = Math.round(3 * cfg.qual * thrNow);
@@ -3366,20 +3756,20 @@
           }
         }
       }
-      function updateParticles(dt) {
+      function updateParticles(dtVisual, dtSim) {
         for (let i = particles.length - 1; i >= 0; i--) {
           const p = particles[i];
-          p.life -= dt;
+          p.life -= dtVisual;
           if (p.life <= 0) {
             particles.splice(i, 1);
             continue;
           }
-          p.x += p.vx * dt;
-          p.h += p.vh * dt;
+          p.x += p.vx * dtVisual;
+          p.h += p.vh * dtVisual;
           if (p.type === "smoke") {
             p.vx *= 0.98;
-            p.vh = p.vh * 0.98 + 6 * dt;
-          } else p.vh -= 20 * dt;
+            p.vh = p.vh * 0.98 + 6 * dtVisual;
+          } else p.vh -= 20 * dtVisual;
           if (p.h < 0) {
             p.h = 0;
             p.vh = Math.abs(p.vh) * 0.2;
@@ -3387,19 +3777,19 @@
         }
         for (let i = debris.length - 1; i >= 0; i--) {
           const d = debris[i];
-          d.age += dt;
-          d.vh -= grav(d.h) * dt * 0.9;
+          d.age += dtSim;
+          d.vh -= grav(d.h) * dtSim * 0.9;
           d.vx *= 0.999;
-          d.x += d.vx * dt;
-          d.h += d.vh * dt;
-          d.rot += d.vr * dt;
+          d.x += d.vx * dtSim;
+          d.h += d.vh * dtSim;
+          d.rot += d.vr * dtSim;
           if (d.h < 0 || d.age > 24) debris.splice(i, 1);
         }
       }
 
       /* ============================================================
-   10. HUD / STATS / TABELAS
-============================================================ */
+         10. HUD / STATS / TABELAS
+      ============================================================ */
       const STAT_DEFS = [
         ["alt", "Altitude", "#22d3ee"],
         ["vel", "Velocidade", "#3ddc84"],
@@ -3615,8 +4005,8 @@
       }
 
       /* ============================================================
-   11. EXPORTAÇÃO
-============================================================ */
+         11. EXPORTAÇÃO
+      ============================================================ */
       function exportCSV() {
         const head =
           "t_s,h_m,downrange_m,speed_ms,vh_ms,acc_ms2,mach,q_pa,rho_kgm3,T_K,g_ms2,thrust_N,drag_N,mass_kg,fuel_pct,stage,vm_kgs";
@@ -3649,7 +4039,7 @@
       }
       function exportJSON() {
         const data = {
-          config: cfg,
+          config: { ...cfg, warp: cfg.warp === Infinity ? "max" : cfg.warp },
           events,
           summary: {
             apogee_m: S.maxH,
@@ -3676,8 +4066,8 @@
       }
 
       /* ============================================================
-   12. CONTROLES — ligação ao vivo
-============================================================ */
+         12. CONTROLES — ligação ao vivo
+      ============================================================ */
       function bindRange(id, out, fmt, apply) {
         const el = $(id);
         const upd = () => {
@@ -3805,10 +4195,25 @@
           "change",
           (e) => (cfg.buoy = e.target.checked),
         );
-        $("cWarp").addEventListener(
-          "change",
-          (e) => (cfg.warp = parseFloat(e.target.value)),
+        $("cWarp").addEventListener("change", (e) => {
+          setWarp(
+            e.target.value === "max" ? Infinity : parseFloat(e.target.value),
+            false,
+          );
+        });
+        $("btnTurbo").addEventListener("click", () => {
+          Sound.resume();
+          toggleTurbo();
+        });
+        bindRange(
+          "cJoin",
+          "oJoin",
+          (v) => v + "%",
+          (v) => {
+            cfg.join = v;
+          },
         );
+        setWarp(cfg.warp); // sincroniza badge/select no boot
         bindRange(
           "cZoom",
           "oZoom",
@@ -3931,7 +4336,13 @@
           else if (e.key === "m" || e.key === "M") {
             Sound.resume();
             Sound.toggle();
-          } else if (e.key >= "1" && e.key <= "7")
+          } else if (e.key === "f" || e.key === "F") {
+            Sound.resume();
+            toggleTurbo();
+          } else if (e.key === "]" || e.key === "+" || e.key === "=")
+            cycleWarp(1);
+          else if (e.key === "[" || e.key === "-") cycleWarp(-1);
+          else if (e.key >= "1" && e.key <= "7")
             switchTab(
               [
                 "lancamento",
@@ -4000,6 +4411,7 @@
         $("cWarp").dispatchEvent(new Event("change"));
         setCtl("cZoom", 55);
         toast("♻ Valores padrão do notebook restaurados");
+        setCtl("cJoin", 12);
       }
       function launchOrPause() {
         Sound.resume();
@@ -4024,8 +4436,8 @@
       }
 
       /* ============================================================
-   13. ABAS
-============================================================ */
+         13. ABAS
+      ============================================================ */
       let activeTab = "lancamento";
       function switchTab(name) {
         activeTab = name;
@@ -4055,10 +4467,80 @@
         const b = e.target.closest("button");
         if (b) switchTab(b.dataset.tab);
       });
+      /* ============================================================
+         FAST-FORWARD — dt fixo, mais passos por frame
+         ============================================================ */
+      const DT = 1 / 60; // resolução temporal da simulação (NUNCA muda)
+      const WARP_LEVELS = [0.5, 1, 2, 4, 8, 16, 32, 64, 128, Infinity];
+      const FRAME_BUDGET_MS = 10; // orçamento de CPU por frame (deixa ~6ms p/ render)
+      const MAX_SIM_DEBT = 4; // teto de "dívida" de tempo simulado (s)
+      let effSpeed = 0,
+        effAcc = 0,
+        effTimer = 0,
+        lastSteps = 0;
+
+      const warpLabel = (w) => (w === Infinity ? "MÁX" : w + "×");
+
+      function setWarp(w, syncSelect = true) {
+        cfg.warp = w;
+        if (syncSelect) $("cWarp").value = w === Infinity ? "max" : String(w);
+        $("oWarp").textContent = warpLabel(w);
+        const badge = $("warpBadge");
+        if (w > 1) {
+          badge.style.display = "";
+          badge.textContent = "⏩ " + warpLabel(w);
+        } else {
+          badge.style.display = "none";
+        }
+        $("btnTurbo").classList.toggle("on", w === Infinity);
+      }
+
+      function cycleWarp(dir) {
+        let i = WARP_LEVELS.indexOf(cfg.warp);
+        if (i < 0) i = 1;
+        setWarp(WARP_LEVELS[clamp(i + dir, 0, WARP_LEVELS.length - 1)]);
+      }
+
+      function toggleTurbo() {
+        setWarp(cfg.warp === Infinity ? 1 : Infinity);
+      }
+
+      /* Executa passos de dt fixo até atingir o alvo do frame OU o orçamento de CPU.
+         Se não der conta, a dívida fica em simAcc (limitada) e é paga no próximo frame. */
+      function advanceSimulation(dtReal) {
+        if (phase !== "flight" || paused) return { advanced: 0, steps: 0 };
+        simAcc = Math.min(simAcc + dtReal * cfg.warp, MAX_SIM_DEBT);
+        const t0 = performance.now();
+        let steps = 0,
+          advanced = 0;
+        while (simAcc >= DT && phase === "flight") {
+          step(DT);
+          simAcc -= DT;
+          steps++;
+          advanced += DT;
+          // checa o orçamento a cada 16 passos (barato)
+          if ((steps & 15) === 0 && performance.now() - t0 >= FRAME_BUDGET_MS)
+            break;
+        }
+        lastSteps = steps;
+        return { advanced, steps };
+      }
+
+      function updateWarpMeter(advanced, dtReal) {
+        effAcc += advanced;
+        effTimer += dtReal;
+        if (effTimer >= 0.5) {
+          effSpeed = effAcc / effTimer;
+          effAcc = 0;
+          effTimer = 0;
+          $("oWarpEff").textContent =
+            fmtN(effSpeed, 1) + "× efetivo · " + lastSteps + " passos/frame";
+        }
+      }
 
       /* ============================================================
-   14. LOOP PRINCIPAL
-============================================================ */
+         14. LOOP PRINCIPAL
+      ============================================================ */
       let lastT = performance.now(),
         hudTimer = 0,
         chartTimer = 0,
@@ -4066,6 +4548,7 @@
       function loop(now) {
         const dtReal = Math.min(0.1, (now - lastT) / 1000);
         lastT = now;
+
         if (phase === "countdown") {
           const prev = Math.ceil(countdownT);
           countdownT -= dtReal;
@@ -4074,6 +4557,10 @@
             Sound.beep(660, 0.12);
           if (countdownT <= 0) {
             phase = "flight";
+            simAcc = 0;
+            effAcc = 0;
+            effTimer = 0;
+            effSpeed = 0;
             $("countdown").style.display = "none";
             $("btnPause").disabled = false;
             $("btnLaunch").textContent = "⏸ PAUSAR";
@@ -4087,17 +4574,12 @@
             Sound.beep(140, 0.5, "sawtooth", 0.3);
           }
         }
+
+        let advanced = 0;
         if (phase === "flight" && !paused) {
-          simAcc += dtReal * cfg.warp;
-          const dt = 1 / 60;
-          let n = 0;
-          while (simAcc >= dt && n < 40 && phase === "flight") {
-            step(dt);
-            simAcc -= dt;
-            n++;
-          }
-          if (n >= 40) simAcc = 0;
-          updateParticles(dtReal * cfg.warp);
+          const r = advanceSimulation(dtReal);
+          advanced = r.advanced;
+          updateParticles(dtReal, Math.min(advanced, 0.5));
           Sound.engine(
             S.vm > 0
               ? clamp(S.vm / (cfg.flows[Math.min(S.stage, 2)] || 1), 0, 1)
@@ -4106,14 +4588,18 @@
           );
         } else {
           Sound.engine(0, 0);
-          updateParticles(dtReal);
+          updateParticles(dtReal, 0);
         }
+        updateWarpMeter(advanced, dtReal);
+
         if (activeTab === "lancamento") drawFlight(now, dtReal);
+
         hudTimer += dtReal;
         if (hudTimer > 0.12) {
           hudTimer = 0;
           updateHUD();
         }
+
         chartTimer += dtReal;
         if (chartTimer > 0.35) {
           chartTimer = 0;
@@ -4133,18 +4619,20 @@
           }
           if (activeTab === "telemetria") renderTable();
         }
+
         colTimer += dtReal;
         if (colTimer > 0.5) {
           colTimer = 0;
           if (activeTab === "temperatura") drawColumn("colTemp", "temp");
           if (activeTab === "densidade") drawColumn("colRho", "rho");
         }
+
         requestAnimationFrame(loop);
       }
 
       /* ============================================================
-   15. BOOT
-============================================================ */
+         15. BOOT
+      ============================================================ */
       buildStats();
       buildStaticTables();
       resetSim();
