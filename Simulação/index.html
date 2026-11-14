@@ -1,0 +1,4160 @@
+<!-- @format -->
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PEN • Centro de Controle de Lançamento</title>
+    <style>
+      :root {
+        --bg0: #04060d;
+        --bg1: #0a1120;
+        --bg2: #0e1729;
+        --surface: rgba(14, 23, 41, 0.82);
+        --line: #22304a;
+        --line2: #31456b;
+        --ink: #e9eef8;
+        --mut: #93a1ba;
+        --dim: #5d6c88;
+        --blue: #3f8cff;
+        --cyan: #22d3ee;
+        --purple: #a06bff;
+        --brand: #7c3aed;
+        --amber: #ffb02e;
+        --orange: #ff7a1c;
+        --green: #3ddc84;
+        --red: #ff4d6d;
+        --magenta: #e879f9;
+        --lime: #a3e635;
+        --mono:
+          "Cascadia Code", "JetBrains Mono", "Fira Code", Consolas,
+          ui-monospace, monospace;
+        --disp:
+          "Segoe UI Variable Display", "Segoe UI", Inter, system-ui, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background: var(--bg0);
+        color: var(--ink);
+        font-family: var(--disp);
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-size: 14px;
+        line-height: 1.45;
+      }
+      /* ---------- fundo em camadas ---------- */
+      #bgfx {
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        background:
+          radial-gradient(
+            1200px 700px at 85% -10%,
+            rgba(124, 58, 237, 0.16),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 600px at -10% 30%,
+            rgba(63, 140, 255, 0.12),
+            transparent 60%
+          ),
+          radial-gradient(
+            800px 500px at 60% 110%,
+            rgba(34, 211, 238, 0.08),
+            transparent 60%
+          ),
+          linear-gradient(180deg, #05070f 0%, #070c18 50%, #04060d 100%);
+      }
+      #bgfx::before,
+      #bgfx::after {
+        content: "";
+        position: absolute;
+        inset: -20%;
+        filter: blur(70px);
+        opacity: 0.5;
+      }
+      #bgfx::before {
+        background: radial-gradient(
+          600px 400px at 30% 20%,
+          rgba(124, 58, 237, 0.14),
+          transparent 70%
+        );
+        animation: drift1 46s ease-in-out infinite alternate;
+      }
+      #bgfx::after {
+        background: radial-gradient(
+          700px 420px at 70% 70%,
+          rgba(34, 211, 238, 0.1),
+          transparent 70%
+        );
+        animation: drift2 58s ease-in-out infinite alternate;
+      }
+      @keyframes drift1 {
+        from {
+          transform: translate(-4%, -2%) rotate(0deg);
+        }
+        to {
+          transform: translate(5%, 4%) rotate(8deg);
+        }
+      }
+      @keyframes drift2 {
+        from {
+          transform: translate(3%, 2%);
+        }
+        to {
+          transform: translate(-5%, -4%);
+        }
+      }
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        pointer-events: none;
+        opacity: 0.05;
+        mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #bgfx::before,
+        #bgfx::after {
+          animation: none;
+        }
+      }
+      /* ---------- scrollbar da casa ---------- */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #5b3fd4 #0a1120;
+      }
+      *::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      *::-webkit-scrollbar-track {
+        background: #0a1120;
+        border-radius: 8px;
+      }
+      *::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, var(--brand), var(--blue));
+        border-radius: 8px;
+        border: 2px solid #0a1120;
+      }
+      *::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, var(--purple), var(--cyan));
+      }
+      /* ---------- topbar ---------- */
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 18px;
+        background: rgba(6, 9, 18, 0.86);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--line);
+        animation: fadeDown 0.5s ease both;
+      }
+      @keyframes fadeDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+      }
+      .brand .logo {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        font-size: 18px;
+        background: linear-gradient(135deg, var(--brand), var(--blue));
+        box-shadow: 0 0 18px rgba(124, 58, 237, 0.5);
+      }
+      .brand small {
+        display: block;
+        font-weight: 500;
+        color: var(--mut);
+        letter-spacing: 0.18em;
+        font-size: 10px;
+      }
+      .clock {
+        font-family: var(--mono);
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--cyan);
+        text-shadow: 0 0 14px rgba(34, 211, 238, 0.45);
+        min-width: 132px;
+        text-align: center;
+      }
+      .pill {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        padding: 5px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line2);
+        color: var(--mut);
+        white-space: nowrap;
+      }
+      .pill.ok {
+        color: var(--green);
+        border-color: rgba(61, 220, 132, 0.5);
+        box-shadow: 0 0 12px rgba(61, 220, 132, 0.18);
+      }
+      .pill.warn {
+        color: var(--amber);
+        border-color: rgba(255, 176, 46, 0.5);
+        box-shadow: 0 0 12px rgba(255, 176, 46, 0.18);
+      }
+      .pill.fly {
+        color: var(--cyan);
+        border-color: rgba(34, 211, 238, 0.5);
+        box-shadow: 0 0 12px rgba(34, 211, 238, 0.2);
+      }
+      .pill.bad {
+        color: var(--red);
+        border-color: rgba(255, 77, 109, 0.5);
+      }
+      .spacer {
+        flex: 1;
+      }
+      button {
+        font-family: var(--disp);
+        cursor: pointer;
+        border: 1px solid var(--line2);
+        color: var(--ink);
+        background: linear-gradient(180deg, #16223c, #101a30);
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 13px;
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.2s ease,
+          border-color 0.2s ease,
+          background 0.2s;
+      }
+      button:hover {
+        transform: translateY(-1px);
+        border-color: var(--blue);
+        box-shadow: 0 4px 18px rgba(63, 140, 255, 0.22);
+      }
+      button:active {
+        transform: translateY(0) scale(0.98);
+      }
+      button:focus-visible {
+        outline: 2px solid var(--cyan);
+        outline-offset: 2px;
+      }
+      button.primary {
+        background: linear-gradient(135deg, var(--brand), var(--blue));
+        border-color: transparent;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        box-shadow: 0 0 22px rgba(124, 58, 237, 0.4);
+      }
+      button.primary:hover {
+        box-shadow: 0 0 30px rgba(124, 58, 237, 0.65);
+      }
+      button.danger {
+        border-color: rgba(255, 77, 109, 0.5);
+        color: var(--red);
+      }
+      button.icon {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        display: grid;
+        place-items: center;
+        font-size: 16px;
+        border-radius: 10px;
+      }
+      button[disabled] {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      /* ---------- tabs ---------- */
+      .tabs {
+        position: sticky;
+        top: 59px;
+        z-index: 49;
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        padding: 8px 14px;
+        background: rgba(6, 9, 18, 0.8);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--line);
+        animation: fadeDown 0.6s 0.08s ease both;
+      }
+      .tabs button {
+        border: none;
+        background: transparent;
+        color: var(--mut);
+        border-radius: 9px;
+        padding: 8px 14px;
+        font-size: 12.5px;
+        letter-spacing: 0.05em;
+        position: relative;
+        white-space: nowrap;
+      }
+      .tabs button:hover {
+        color: var(--ink);
+        background: rgba(63, 140, 255, 0.08);
+        transform: none;
+        box-shadow: none;
+      }
+      .tabs button.active {
+        color: var(--ink);
+        background: linear-gradient(
+          180deg,
+          rgba(124, 58, 237, 0.22),
+          rgba(63, 140, 255, 0.12)
+        );
+      }
+      .tabs button.active::after {
+        content: "";
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: 2px;
+        height: 2px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--purple), var(--cyan));
+        box-shadow: 0 0 10px var(--purple);
+      }
+      /* ---------- layout ---------- */
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 330px;
+        gap: 16px;
+        padding: 16px;
+        max-width: 1720px;
+        margin: 0 auto;
+      }
+      .content {
+        min-width: 0;
+      }
+      .tab {
+        display: none;
+        animation: fadeUp 0.4s ease both;
+      }
+      .tab.active {
+        display: block;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow:
+          0 8px 30px rgba(0, 0, 0, 0.35),
+          inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      }
+      .card h3 {
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        color: var(--mut);
+        font-weight: 600;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+      }
+      .card h3 b {
+        color: var(--cyan);
+      }
+      .formula {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--purple);
+        background: rgba(124, 58, 237, 0.08);
+        border: 1px solid rgba(124, 58, 237, 0.3);
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin-bottom: 12px;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      .formula sub,
+      .formula sup {
+        font-size: 9px;
+      }
+      /* ---------- canvas de voo ---------- */
+      .flightwrap {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid var(--line2);
+        box-shadow:
+          0 12px 44px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(124, 58, 237, 0.12);
+        height: 520px;
+        background: #05070f;
+      }
+      #flight {
+        width: 100%;
+        height: 100%;
+        display: block;
+        cursor: grab;
+      }
+      .hud {
+        position: absolute;
+        pointer-events: none;
+        font-family: var(--mono);
+      }
+      .hud.tl {
+        top: 12px;
+        left: 12px;
+        display: grid;
+        gap: 6px;
+      }
+      .hud .row {
+        background: rgba(5, 8, 16, 0.72);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 6px 10px;
+        backdrop-filter: blur(6px);
+      }
+      .hud .k {
+        font-size: 9px;
+        letter-spacing: 0.18em;
+        color: var(--dim);
+      }
+      .hud .v {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--cyan);
+      }
+      .hud .v small {
+        font-size: 10px;
+        color: var(--mut);
+        font-weight: 400;
+      }
+      .hud.tr {
+        top: 12px;
+        right: 12px;
+        width: 172px;
+        display: grid;
+        gap: 6px;
+      }
+      .fuelbar {
+        height: 7px;
+        border-radius: 5px;
+        background: #101a30;
+        overflow: hidden;
+        border: 1px solid var(--line);
+      }
+      .fuelbar i {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, var(--amber), var(--orange));
+        border-radius: 5px;
+        transition: width 0.2s;
+      }
+      .fuelrow {
+        font-size: 10px;
+        color: var(--mut);
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2px;
+      }
+      .hud.bl {
+        bottom: 12px;
+        left: 12px;
+        font-size: 10px;
+        color: var(--dim);
+        letter-spacing: 0.1em;
+      }
+      #countdown {
+        position: absolute;
+        inset: 0;
+        display: none;
+        place-items: center;
+        font-family: var(--mono);
+        font-size: 110px;
+        font-weight: 800;
+        color: var(--amber);
+        text-shadow: 0 0 40px rgba(255, 176, 46, 0.7);
+        background: rgba(4, 6, 13, 0.35);
+        pointer-events: none;
+      }
+      #endOverlay {
+        position: absolute;
+        inset: 0;
+        display: none;
+        place-items: center;
+        background: rgba(4, 6, 13, 0.78);
+        backdrop-filter: blur(6px);
+      }
+      #endOverlay .box {
+        width: min(480px, 92%);
+        text-align: center;
+        padding: 26px;
+      }
+      #endOverlay h2 {
+        font-size: 22px;
+        letter-spacing: 0.14em;
+        margin-bottom: 4px;
+      }
+      #endOverlay .sub {
+        color: var(--mut);
+        font-size: 12px;
+        margin-bottom: 16px;
+      }
+      #endStats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 18px;
+        font-family: var(--mono);
+      }
+      #endStats div {
+        background: rgba(63, 140, 255, 0.07);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 8px;
+      }
+      #endStats .k {
+        font-size: 9px;
+        letter-spacing: 0.16em;
+        color: var(--dim);
+      }
+      #endStats .v {
+        font-size: 16px;
+        color: var(--cyan);
+        font-weight: 700;
+      }
+      /* ---------- stats / charts ---------- */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+        gap: 10px;
+        margin: 14px 0;
+      }
+      .stat {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 12px;
+        position: relative;
+        overflow: hidden;
+      }
+      .stat::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--c, var(--cyan));
+      }
+      .stat .k {
+        font-size: 9.5px;
+        letter-spacing: 0.16em;
+        color: var(--dim);
+        text-transform: uppercase;
+      }
+      .stat .v {
+        font-family: var(--mono);
+        font-size: 19px;
+        font-weight: 700;
+        color: var(--c, var(--cyan));
+        margin-top: 2px;
+      }
+      .stat .v small {
+        font-size: 10px;
+        color: var(--mut);
+        font-weight: 400;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .grid3 {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 12px;
+      }
+      .chart-box {
+        position: relative;
+        height: 210px;
+      }
+      .chart-box.tall {
+        height: 340px;
+      }
+      .chart-box canvas {
+        position: absolute;
+        inset: 0;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 8px;
+        font-size: 11px;
+        color: var(--mut);
+      }
+      .legend i {
+        display: inline-block;
+        width: 14px;
+        height: 3px;
+        border-radius: 2px;
+        margin-right: 5px;
+        vertical-align: middle;
+      }
+      .log {
+        max-height: 220px;
+        overflow-y: auto;
+        display: grid;
+        gap: 6px;
+        font-family: var(--mono);
+        font-size: 11.5px;
+      }
+      .log .ev {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        padding: 5px 8px;
+        border-radius: 8px;
+        background: rgba(63, 140, 255, 0.05);
+        border: 1px solid transparent;
+        animation: fadeUp 0.3s ease;
+      }
+      .log .ev:hover {
+        border-color: var(--line2);
+      }
+      .log .t {
+        color: var(--dim);
+        min-width: 74px;
+      }
+      .log .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex: none;
+        transform: translateY(-1px);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: var(--mono);
+        font-size: 11.5px;
+      }
+      th {
+        color: var(--dim);
+        font-weight: 600;
+        text-align: right;
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--line2);
+        letter-spacing: 0.08em;
+        font-size: 10px;
+        position: sticky;
+        top: 0;
+        background: var(--bg2);
+      }
+      td {
+        padding: 5px 8px;
+        text-align: right;
+        border-bottom: 1px solid rgba(34, 48, 74, 0.4);
+        color: var(--ink);
+      }
+      th:first-child,
+      td:first-child {
+        text-align: left;
+      }
+      tr:hover td {
+        background: rgba(63, 140, 255, 0.06);
+      }
+      .tablewrap {
+        max-height: 420px;
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      /* ---------- painel de controles ---------- */
+      .controls {
+        position: sticky;
+        top: 112px;
+        align-self: start;
+        max-height: calc(100vh - 128px);
+        overflow-y: auto;
+        display: grid;
+        gap: 12px;
+        padding-right: 4px;
+        animation: fadeUp 0.5s 0.15s ease both;
+      }
+      .ctl-group {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px 14px;
+      }
+      .ctl-group h4 {
+        font-size: 10.5px;
+        letter-spacing: 0.2em;
+        color: var(--purple);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .ctl-group h4::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          rgba(160, 107, 255, 0.4),
+          transparent
+        );
+      }
+      .ctl {
+        margin-bottom: 10px;
+      }
+      .ctl label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11.5px;
+        color: var(--mut);
+        margin-bottom: 4px;
+      }
+      .ctl label output {
+        font-family: var(--mono);
+        color: var(--cyan);
+        font-weight: 600;
+      }
+      input[type="range"] {
+        width: 100%;
+        appearance: none;
+        -webkit-appearance: none;
+        height: 22px;
+        background: transparent;
+        cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        height: 5px;
+        border-radius: 4px;
+        background: linear-gradient(90deg, var(--brand), var(--blue));
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        margin-top: -5px;
+        background: #fff;
+        border: 3px solid var(--purple);
+        box-shadow: 0 0 10px rgba(160, 107, 255, 0.7);
+        transition: transform 0.12s;
+      }
+      input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+      }
+      input[type="range"]::-moz-range-track {
+        height: 5px;
+        border-radius: 4px;
+        background: linear-gradient(90deg, var(--brand), var(--blue));
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #fff;
+        border: 3px solid var(--purple);
+      }
+      select,
+      input[type="text"] {
+        width: 100%;
+        background: #0d1526;
+        color: var(--ink);
+        border: 1px solid var(--line2);
+        border-radius: 9px;
+        padding: 7px 9px;
+        font-size: 12.5px;
+        font-family: var(--disp);
+      }
+      select:focus,
+      input:focus {
+        outline: none;
+        border-color: var(--cyan);
+        box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.18);
+      }
+      .switchrow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+        color: var(--mut);
+        margin-bottom: 8px;
+      }
+      .switch {
+        position: relative;
+        width: 38px;
+        height: 20px;
+        flex: none;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .switch i {
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: #16223c;
+        border: 1px solid var(--line2);
+        transition: 0.2s;
+        cursor: pointer;
+      }
+      .switch i::before {
+        content: "";
+        position: absolute;
+        left: 2px;
+        top: 2px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--dim);
+        transition: 0.2s;
+      }
+      .switch input:checked + i {
+        background: linear-gradient(90deg, var(--brand), var(--blue));
+        border-color: transparent;
+      }
+      .switch input:checked + i::before {
+        transform: translateX(18px);
+        background: #fff;
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+      }
+      .btnrow {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .btnrow button {
+        font-size: 12px;
+        padding: 8px 6px;
+      }
+      .note {
+        font-size: 10.5px;
+        color: var(--dim);
+        margin-top: 6px;
+        line-height: 1.5;
+      }
+      .note b {
+        color: var(--amber);
+      }
+      /* ---------- toast ---------- */
+      #toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        z-index: 80;
+        opacity: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(124, 58, 237, 0.95),
+          rgba(63, 140, 255, 0.95)
+        );
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        pointer-events: none;
+        transition: 0.3s;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      }
+      #toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+      .seg {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+      }
+      .seg button {
+        padding: 5px 12px;
+        font-size: 11.5px;
+        border-radius: 8px;
+      }
+      .seg button.on {
+        background: linear-gradient(135deg, var(--brand), var(--blue));
+        border-color: transparent;
+      }
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .toolbar input[type="text"] {
+        width: 200px;
+      }
+      .toolbar select {
+        width: 140px;
+      }
+      footer {
+        padding: 18px;
+        text-align: center;
+        color: var(--dim);
+        font-size: 11px;
+        letter-spacing: 0.1em;
+      }
+      @media (max-width: 1120px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        .controls {
+          position: static;
+          max-height: none;
+          grid-template-columns: 1fr 1fr;
+          display: grid;
+        }
+        .grid2,
+        .grid3 {
+          grid-template-columns: 1fr;
+        }
+        .flightwrap {
+          height: 440px;
+        }
+        .clock {
+          font-size: 17px;
+          min-width: 104px;
+        }
+      }
+      @media (max-width: 640px) {
+        .controls {
+          grid-template-columns: 1fr;
+        }
+        .topbar {
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .tabs {
+          top: 104px;
+        }
+        .flightwrap {
+          height: 380px;
+        }
+        .hud.tr {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="bgfx"></div>
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>PEN<small>CONTROLE DE MISSÃO</small></div>
+      </div>
+      <div class="clock" id="clock">T−00:00.0</div>
+      <span class="pill ok" id="statusPill">PRONTO</span>
+      <div class="spacer"></div>
+      <button class="icon" id="btnSound" title="Som (M)">🔊</button>
+      <button class="icon" id="btnPause" title="Pausar (Espaço)" disabled>
+        ⏸
+      </button>
+      <button class="icon danger" id="btnReset" title="Reiniciar (R)">↺</button>
+      <button class="primary" id="btnLaunch">🚀 LANÇAR</button>
+    </header>
+
+    <nav class="tabs" id="tabs">
+      <button data-tab="lancamento" class="active">🚀 Lançamento</button>
+      <button data-tab="gravidade">🌍 Gravidade</button>
+      <button data-tab="temperatura">🌡️ Temperatura</button>
+      <button data-tab="densidade">🫧 Densidade</button>
+      <button data-tab="aerodinamica">💨 Aerodinâmica</button>
+      <button data-tab="propulsao">🔥 Propulsão</button>
+      <button data-tab="telemetria">📡 Telemetria</button>
+    </nav>
+
+    <main class="layout">
+      <section class="content">
+        <!-- ================= LANÇAMENTO ================= -->
+        <div class="tab active" id="tab-lancamento">
+          <div class="flightwrap" id="flightwrap">
+            <canvas id="flight"></canvas>
+            <div class="hud tl">
+              <div class="row">
+                <div class="k">ALTITUDE</div>
+                <div class="v" id="hudAlt">0 <small>m</small></div>
+              </div>
+              <div class="row">
+                <div class="k">VELOCIDADE</div>
+                <div class="v" id="hudVel">0 <small>m/s</small></div>
+              </div>
+              <div class="row">
+                <div class="k">MACH</div>
+                <div class="v" id="hudMach">0.00</div>
+              </div>
+              <div class="row">
+                <div class="k">PRESSÃO DINÂMICA</div>
+                <div class="v" id="hudQ">0 <small>kPa</small></div>
+              </div>
+            </div>
+            <div class="hud tr">
+              <div class="row">
+                <div class="k">ESTÁGIO ATUAL</div>
+                <div class="v" id="hudStage">S1</div>
+              </div>
+              <div class="row" id="fuelRows"></div>
+              <div class="row">
+                <div class="k">ACELERADOR</div>
+                <div class="fuelbar">
+                  <i id="hudThr" style="width: 100%"></i>
+                </div>
+              </div>
+            </div>
+            <div class="hud bl" id="hudSprite">SPRITE: —</div>
+            <div id="countdown">3</div>
+            <div id="endOverlay">
+              <div class="box card">
+                <h2 id="endTitle">MISSÃO ENCERRADA</h2>
+                <div class="sub" id="endSub">Relatório de voo</div>
+                <div id="endStats"></div>
+                <div class="btnrow">
+                  <button class="primary" id="btnAgain">↺ NOVA MISSÃO</button>
+                  <button id="btnExportEnd">⬇ EXPORTAR CSV</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats" id="statCards"></div>
+
+          <div class="grid2">
+            <div class="card">
+              <h3>Altitude × tempo</h3>
+              <div class="chart-box"><canvas id="chAlt"></canvas></div>
+            </div>
+            <div class="card">
+              <h3>Velocidade × tempo</h3>
+              <div class="chart-box"><canvas id="chVel"></canvas></div>
+            </div>
+            <div class="card">
+              <h3>Aceleração × tempo</h3>
+              <div class="chart-box"><canvas id="chAcc"></canvas></div>
+            </div>
+            <div class="card">
+              <h3>Massa & combustível × tempo</h3>
+              <div class="chart-box"><canvas id="chMass"></canvas></div>
+              <div class="legend">
+                <span><i style="background: #22d3ee"></i>massa (t)</span
+                ><span><i style="background: #ffb02e"></i>combustível (%)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 12px">
+            <h3>Registro de eventos</h3>
+            <div class="log" id="eventLog"></div>
+          </div>
+        </div>
+
+        <!-- ================= GRAVIDADE ================= -->
+        <div class="tab" id="tab-gravidade">
+          <div class="formula">
+            g(h) = g<sub>0</sub> · ( R / (R + h) )² &nbsp;&nbsp;|&nbsp;&nbsp;
+            g<sub>0</sub> = 9.80665 m/s² &nbsp; R = 6 356 766 m
+          </div>
+          <div class="seg" id="gRange">
+            <button data-r="100000" class="on">0–100 km</button>
+            <button data-r="1000000">0–1 000 km</button>
+            <button data-r="40000000">0–40 000 km</button>
+          </div>
+          <div class="grid3">
+            <div class="card">
+              <h3>Gravidade × altitude — <b>marcador = foguete</b></h3>
+              <div class="chart-box tall"><canvas id="chGrav"></canvas></div>
+            </div>
+            <div class="card">
+              <h3>Valores de referência</h3>
+              <div
+                class="stats"
+                style="grid-template-columns: 1fr 1fr; margin: 0 0 12px"
+              >
+                <div class="stat" style="--c: #a06bff">
+                  <div class="k">g atual</div>
+                  <div class="v" id="gNow">9.807</div>
+                </div>
+                <div class="stat" style="--c: #22d3ee">
+                  <div class="k">altitude</div>
+                  <div class="v" id="gAlt">0 km</div>
+                </div>
+              </div>
+              <div class="tablewrap" style="max-height: 260px">
+                <table id="gTable"></table>
+              </div>
+              <p class="note">
+                Modelo do notebook <b>atmosfera.ipynb</b>: queda do inverso do
+                quadrado com raio polar da Terra. A 400 km, g ainda vale ≈ 8.7
+                m/s² — órbita é queda livre, não ausência de gravidade.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= TEMPERATURA ================= -->
+        <div class="tab" id="tab-temperatura">
+          <div class="formula">
+            T(h) = T<sub>0</sub> + Σ
+            β<sub>j</sub>(h<sub>j+1</sub>−h<sub>j</sub>) +
+            β<sub>i</sub>(h−h<sub>i</sub>) &nbsp;|&nbsp; T<sub>0</sub> = 288.15
+            K
+          </div>
+          <div class="grid3">
+            <div class="card">
+              <h3>Perfil térmico — <b>marcador = foguete</b></h3>
+              <div class="chart-box tall"><canvas id="chTemp"></canvas></div>
+            </div>
+            <div class="card">
+              <h3>Coluna atmosférica</h3>
+              <div class="chart-box tall" style="height: 340px">
+                <canvas id="colTemp"></canvas>
+              </div>
+              <p class="note">
+                Gradiente pintado pela temperatura real de cada camada: azul =
+                frio, âmbar/vermelho = quente.
+              </p>
+            </div>
+          </div>
+          <div class="grid2" style="margin-top: 12px">
+            <div class="card">
+              <h3>Camadas do modelo</h3>
+              <div class="tablewrap" style="max-height: 280px">
+                <table id="tTable"></table>
+              </div>
+            </div>
+            <div class="card">
+              <h3>No ponto do foguete</h3>
+              <div
+                class="stats"
+                style="grid-template-columns: 1fr 1fr; margin: 0"
+              >
+                <div class="stat" style="--c: #ffb02e">
+                  <div class="k">T atual</div>
+                  <div class="v" id="tNow">288.2 K</div>
+                </div>
+                <div class="stat" style="--c: #ff7a1c">
+                  <div class="k">T atual</div>
+                  <div class="v" id="tNowC">15.0 °C</div>
+                </div>
+                <div class="stat" style="--c: #22d3ee">
+                  <div class="k">camada</div>
+                  <div class="v" id="tLayer">Troposfera</div>
+                </div>
+                <div class="stat" style="--c: #a06bff">
+                  <div class="k">gradiente β</div>
+                  <div class="v" id="tBeta">−6.5 K/km</div>
+                </div>
+              </div>
+              <p class="note">
+                8 camadas até 86 km (US Standard Atmosphere simplificada, como
+                no notebook). Acima de 86 km o modelo mantém T constante.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= DENSIDADE ================= -->
+        <div class="tab" id="tab-densidade">
+          <div class="formula">
+            dρ/dh = −ρ · ( g·M<sub>m</sub>/(R<sub>g</sub>·T) + T′/T )
+            &nbsp;→&nbsp; ρ(h) = e<sup>−(F(h,i)+K<sub>i</sub>)</sup>
+            &nbsp;|&nbsp; ρ<sub>0</sub> = 1.225 kg/m³
+          </div>
+          <div class="seg">
+            <button id="rhoLog" class="on">escala log</button
+            ><button id="rhoLin">escala linear</button>
+          </div>
+          <div class="grid3">
+            <div class="card">
+              <h3>Densidade × altitude — <b>marcador = foguete</b></h3>
+              <div class="chart-box tall"><canvas id="chRho"></canvas></div>
+            </div>
+            <div class="card">
+              <h3>Coluna atmosférica</h3>
+              <div class="chart-box tall" style="height: 340px">
+                <canvas id="colRho"></canvas>
+              </div>
+              <p class="note">
+                Opacidade proporcional à densidade: o ar “some” visualmente
+                exatamente onde o arrasto deixa de importar.
+              </p>
+            </div>
+          </div>
+          <div class="grid2" style="margin-top: 12px">
+            <div class="card">
+              <h3>Pressão atmosférica × altitude</h3>
+              <div class="chart-box"><canvas id="chPres"></canvas></div>
+            </div>
+            <div class="card">
+              <h3>No ponto do foguete</h3>
+              <div
+                class="stats"
+                style="grid-template-columns: 1fr 1fr; margin: 0"
+              >
+                <div class="stat" style="--c: #22d3ee">
+                  <div class="k">ρ atual</div>
+                  <div class="v" id="rNow">1.225</div>
+                </div>
+                <div class="stat" style="--c: #3f8cff">
+                  <div class="k">pressão</div>
+                  <div class="v" id="pNow">101.3 kPa</div>
+                </div>
+                <div class="stat" style="--c: #a3e635">
+                  <div class="k">ρ(11 km)</div>
+                  <div class="v">0.3649</div>
+                </div>
+                <div class="stat" style="--c: #e879f9">
+                  <div class="k">fração do nível do mar</div>
+                  <div class="v" id="rFrac">100%</div>
+                </div>
+              </div>
+              <p class="note">
+                Solução analítica por camada com constantes K<sub>i</sub>
+                cascateadas — idêntica à integração do notebook (K₀ = −52.4875).
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= AERODINÂMICA ================= -->
+        <div class="tab" id="tab-aerodinamica">
+          <div class="formula">
+            F<sub>D</sub> = −½·C<sub>D</sub>(M)·ρ(h)·A·|v|·v
+            &nbsp;&nbsp;|&nbsp;&nbsp; V<sub>s</sub> =
+            √(γ·R<sub>g</sub>·T/M<sub>m</sub>) &nbsp;|&nbsp; q = ½ρv²
+          </div>
+          <div class="grid2">
+            <div class="card">
+              <h3>C<sub>D</sub> × Mach — <b>marcador = foguete</b></h3>
+              <div class="chart-box"><canvas id="chCd"></canvas></div>
+            </div>
+            <div class="card">
+              <h3>Velocidade do som × altitude</h3>
+              <div class="chart-box"><canvas id="chVs"></canvas></div>
+            </div>
+            <div class="card">
+              <h3>Arrasto & pressão dinâmica (voo)</h3>
+              <div class="chart-box"><canvas id="chDrag"></canvas></div>
+              <div class="legend">
+                <span><i style="background: #fb7185"></i>arrasto (kN)</span
+                ><span><i style="background: #fbbf24"></i>q (kPa)</span>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Mach & velocidade (voo)</h3>
+              <div class="chart-box"><canvas id="chMach"></canvas></div>
+              <div class="legend">
+                <span><i style="background: #e879f9"></i>Mach</span
+                ><span><i style="background: #22d3ee"></i>|v| (m/s)</span>
+              </div>
+            </div>
+          </div>
+          <div class="stats" style="margin-top: 12px">
+            <div class="stat" style="--c: #e879f9">
+              <div class="k">Mach</div>
+              <div class="v" id="aMach">0.00</div>
+            </div>
+            <div class="stat" style="--c: #fb7185">
+              <div class="k">C<sub>D</sub></div>
+              <div class="v" id="aCd">0.300</div>
+            </div>
+            <div class="stat" style="--c: #fbbf24">
+              <div class="k">q (Max-Q)</div>
+              <div class="v" id="aQ">0 <small>kPa</small></div>
+            </div>
+            <div class="stat" style="--c: #22d3ee">
+              <div class="k">V<sub>s</sub></div>
+              <div class="v" id="aVs">340 <small>m/s</small></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PROPULSÃO ================= -->
+        <div class="tab" id="tab-propulsao">
+          <div class="formula">
+            T = c·( ṁ·μ<sub>e</sub> + (P<sub>c</sub>−P<sub>a</sub>)·A<sub
+              >b</sub
+            >
+            ) &nbsp;|&nbsp; μ<sub>e</sub> = √(
+            2γR<sub>s</sub>T<sub>c</sub>/(γ−1) ·
+            (1−(P<sub>a</sub>/P<sub>c</sub>)<sup>(γ−1)/γ</sup>) )
+          </div>
+          <div class="grid2">
+            <div class="card">
+              <h3>Empuxo × tempo (voo)</h3>
+              <div class="chart-box"><canvas id="chThrust"></canvas></div>
+            </div>
+            <div class="card">
+              <h3>Perfil de vazão do estágio — <b>marcador = queima</b></h3>
+              <div class="chart-box"><canvas id="chFlow"></canvas></div>
+              <p class="note">
+                Multiplicador aplicado à vazão base conforme o combustível do
+                estágio é consumido. Ajuste o perfil e a amplitude no painel →
+              </p>
+            </div>
+            <div class="card">
+              <h3>Pressão da câmara × vazão</h3>
+              <div class="chart-box"><canvas id="chPc"></canvas></div>
+            </div>
+            <div class="card">
+              <h3>Motor em operação</h3>
+              <div
+                class="stats"
+                style="grid-template-columns: 1fr 1fr; margin: 0"
+              >
+                <div class="stat" style="--c: #ff7a1c">
+                  <div class="k">T câmara</div>
+                  <div class="v" id="eTc">— K</div>
+                </div>
+                <div class="stat" style="--c: #ffb02e">
+                  <div class="k">P câmara</div>
+                  <div class="v" id="ePc">— bar</div>
+                </div>
+                <div class="stat" style="--c: #22d3ee">
+                  <div class="k">μ<sub>e</sub></div>
+                  <div class="v" id="eMue">— m/s</div>
+                </div>
+                <div class="stat" style="--c: #3ddc84">
+                  <div class="k">I<sub>sp</sub></div>
+                  <div class="v" id="eIsp">— s</div>
+                </div>
+                <div class="stat" style="--c: #a06bff">
+                  <div class="k">empuxo</div>
+                  <div class="v" id="eThr">— MN</div>
+                </div>
+                <div class="stat" style="--c: #e879f9">
+                  <div class="k">TWR</div>
+                  <div class="v" id="eTwr">—</div>
+                </div>
+              </div>
+              <p class="note">
+                Gases LOX/RP-1: γ = 1.15, M = 23 g/mol. T<sub>c</sub> = T<sub
+                  >w</sub
+                >
+                + (T<sub>ad</sub>−T<sub>w</sub>)·ṁ/(+0.05ṁ) como no notebook
+                forcas_foguete.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= TELEMETRIA ================= -->
+        <div class="tab" id="tab-telemetria">
+          <div class="stats" id="sumCards"></div>
+          <div class="card">
+            <h3>Exportação & dados</h3>
+            <div class="toolbar">
+              <button id="btnCsv">⬇ CSV</button>
+              <button id="btnJson">⬇ JSON</button>
+              <button id="btnPng">📷 PNG do canvas</button>
+              <input type="text" id="tSearch" placeholder="filtrar linhas…" />
+              <select id="tStage">
+                <option value="">todos estágios</option>
+                <option value="0">S1</option>
+                <option value="1">S2</option>
+                <option value="2">S3</option>
+                <option value="3">coasting</option>
+              </select>
+              <span class="note" id="tCount" style="margin: 0"></span>
+            </div>
+            <div class="tablewrap"><table id="tTable2"></table></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PAINEL DE CONTROLES ================= -->
+      <aside class="controls" id="controls">
+        <div class="ctl-group">
+          <h4>🔥 PROPULSÃO</h4>
+          <div class="ctl">
+            <label>Acelerador (ao vivo)<output id="oThr">100%</output></label
+            ><input type="range" id="cThr" min="0" max="100" value="100" />
+          </div>
+          <div class="ctl">
+            <label>Vazão S1<output id="oF0">14 000 kg/s</output></label
+            ><input
+              type="range"
+              id="cF0"
+              min="2000"
+              max="20000"
+              step="100"
+              value="14000"
+            />
+          </div>
+          <div class="ctl">
+            <label>Vazão S2<output id="oF1">1 000 kg/s</output></label
+            ><input
+              type="range"
+              id="cF1"
+              min="200"
+              max="3000"
+              step="25"
+              value="1000"
+            />
+          </div>
+          <div class="ctl">
+            <label>Vazão S3<output id="oF2">600 kg/s</output></label
+            ><input
+              type="range"
+              id="cF2"
+              min="100"
+              max="2000"
+              step="10"
+              value="600"
+            />
+          </div>
+          <div class="ctl">
+            <label>Perfil de vazão</label
+            ><select id="cProfile">
+              <option value="const">Constante</option>
+              <option value="up">Crescente (rampa ↑)</option>
+              <option value="down">Decrescente (rampa ↓)</option>
+              <option value="pulse">Pulsado (senoidal)</option>
+              <option value="step">Estrangulado (degrau)</option>
+            </select>
+          </div>
+          <div class="ctl">
+            <label>Amplitude do perfil<output id="oAmp">35%</output></label
+            ><input type="range" id="cAmp" min="0" max="80" value="35" />
+          </div>
+          <div class="ctl">
+            <label>Correção do bocal c<output id="oC">1.00</output></label
+            ><input type="range" id="cC" min="60" max="120" value="100" />
+          </div>
+          <div class="ctl">
+            <label>Resfriamento da câmara<output id="oCool">0.05</output></label
+            ><input type="range" id="cCool" min="0" max="30" value="5" />
+          </div>
+          <div class="ctl">
+            <label>Energia de separação<output id="oE">10 kJ</output></label
+            ><input type="range" id="cE" min="0" max="100" value="50" />
+          </div>
+        </div>
+        <div class="ctl-group">
+          <h4>🧭 VOO & AMBIENTE</h4>
+          <div class="switchrow">
+            Virada gravitacional<label class="switch"
+              ><input type="checkbox" id="cTurn" /><i></i
+            ></label>
+          </div>
+          <div class="ctl">
+            <label>Inclinação máx.<output id="oPitch">0°</output></label
+            ><input type="range" id="cPitch" min="0" max="80" value="0" />
+          </div>
+          <div class="ctl">
+            <label>Carga útil extra<output id="oPay">0 t</output></label
+            ><input
+              type="range"
+              id="cPay"
+              min="0"
+              max="50000"
+              step="500"
+              value="0"
+            />
+          </div>
+          <div class="ctl">
+            <label>Escala do C<sub>D</sub><output id="oCd">1.00×</output></label
+            ><input type="range" id="cCd" min="50" max="150" value="100" />
+          </div>
+          <div class="ctl">
+            <label>Vento horizontal<output id="oWind">0 m/s</output></label
+            ><input type="range" id="cWind" min="-40" max="40" value="0" />
+          </div>
+          <div class="switchrow">
+            Arrasto aerodinâmico<label class="switch"
+              ><input type="checkbox" id="cDrag" checked /><i></i
+            ></label>
+          </div>
+          <div class="switchrow">
+            Empuxo de Arquimedes<label class="switch"
+              ><input type="checkbox" id="cBuoy" checked /><i></i
+            ></label>
+          </div>
+        </div>
+        <div class="ctl-group">
+          <h4>⚙️ SIMULAÇÃO & CÂMERA</h4>
+          <div class="ctl">
+            <label>Velocidade do tempo</label
+            ><select id="cWarp">
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="2">2×</option>
+              <option value="4">4×</option>
+              <option value="8">8×</option>
+              <option value="16">16×</option>
+            </select>
+          </div>
+          <div class="ctl">
+            <label>Zoom da câmera<output id="oZoom">0.55 px/m</output></label
+            ><input type="range" id="cZoom" min="0" max="100" value="55" />
+          </div>
+          <div class="ctl">
+            <label>Partículas</label
+            ><select id="cQual">
+              <option value="0.4">Baixa</option>
+              <option value="1" selected>Média</option>
+              <option value="1.8">Alta</option>
+            </select>
+          </div>
+          <div class="switchrow">
+            Guias de altitude<label class="switch"
+              ><input type="checkbox" id="cGuides" checked /><i></i
+            ></label>
+          </div>
+          <div class="switchrow">
+            Rastro da trajetória<label class="switch"
+              ><input type="checkbox" id="cTrail" checked /><i></i
+            ></label>
+          </div>
+          <div class="switchrow">
+            Câmera segue foguete<label class="switch"
+              ><input type="checkbox" id="cFollow" checked /><i></i
+            ></label>
+          </div>
+        </div>
+        <div class="ctl-group">
+          <h4>🎛️ AÇÕES</h4>
+          <div class="btnrow">
+            <button id="btnRand">🎲 Aleatório</button
+            ><button id="btnDefaults">♻ Padrões</button>
+            <button id="btnCsv2">⬇ CSV</button
+            ><button id="btnJson2">⬇ JSON</button>
+          </div>
+          <div class="btnrow" style="margin-top: 8px">
+            <button id="btnSprite" style="grid-column: 1/3">
+              🖼 Carregar sprite do foguete…
+            </button>
+          </div>
+          <p class="note" id="spriteNote">
+            Procurando imagem ao lado de <b>main.py</b>…
+          </p>
+          <p class="note">
+            Atalhos: <b>Espaço</b> lançar/pausar · <b>R</b> reiniciar ·
+            <b>M</b> som · <b>1–7</b> abas. Arraste uma imagem sobre o canvas
+            para trocar o sprite.
+          </p>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      PEN • simulação baseada em atmosfera.ipynb · forcas_foguete.ipynb ·
+      lancamento.ipynb — integração trapezoidal dt = 1/60 s
+    </footer>
+    <div id="toast"></div>
+    <input type="file" id="spriteFile" accept="image/*" hidden />
+
+    <script>
+      "use strict";
+      /* ============================================================
+   1. UTILITÁRIOS
+============================================================ */
+      const $ = (id) => document.getElementById(id);
+      const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+      const lerp = (a, b, t) => a + (b - a) * t;
+      const TAU = Math.PI * 2;
+      function fmtSI(v, d = 1) {
+        if (!isFinite(v)) return "—";
+        const a = Math.abs(v);
+        if (a >= 1e9) return (v / 1e9).toFixed(d) + "G";
+        if (a >= 1e6) return (v / 1e6).toFixed(d) + "M";
+        if (a >= 1e3) return (v / 1e3).toFixed(d) + "k";
+        if (a >= 10) return v.toFixed(d);
+        if (a >= 1) return v.toFixed(d + 1);
+        if (a === 0) return "0";
+        return v.toExponential(1);
+      }
+      const fmtN = (v, d = 0) =>
+        isFinite(v)
+          ? v.toLocaleString("pt-BR", {
+              maximumFractionDigits: d,
+              minimumFractionDigits: d,
+            })
+          : "—";
+      function fmtClock(t) {
+        const s = Math.abs(t),
+          m = Math.floor(s / 60),
+          ss = s % 60;
+        return (
+          (t < 0 ? "T−" : "T+") +
+          String(m).padStart(2, "0") +
+          ":" +
+          ss.toFixed(1).padStart(4, "0")
+        );
+      }
+      function toast(msg) {
+        const t = $("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(t._h);
+        t._h = setTimeout(() => t.classList.remove("show"), 2200);
+      }
+      function download(name, blob) {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      }
+      function mulberry(seed) {
+        return function () {
+          seed |= 0;
+          seed = (seed + 0x6d2b79f5) | 0;
+          let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+
+      /* ============================================================
+   2. FÍSICA — porto fiel dos notebooks
+============================================================ */
+      const R = 6356766,
+        G0 = 9.80665,
+        T0 = 288.15,
+        MM = 28.9644e-3,
+        RG = 8.31446261815324,
+        RHO0 = 1.225;
+      const HL = [0, 11000, 20000, 32000, 47000, 51000, 71000, 86000];
+      const BETA = [-6.5, 0, 1.0, 2.8, 0, -2.8, -2.0, 0].map((b) => b / 1000);
+      const LAYER_NAMES = [
+        "Troposfera",
+        "Tropopausa",
+        "Estratosfera I",
+        "Estratosfera II",
+        "Estratopausa",
+        "Mesosfera I",
+        "Mesosfera II",
+        "Mesopausa+",
+      ];
+      const TB = [T0];
+      for (let i = 0; i < 7; i++)
+        TB.push(TB[i] + BETA[i] * (HL[i + 1] - HL[i]));
+      const A_CONST = (R * R * G0 * MM) / RG;
+      function layerOf(h) {
+        let i = 0;
+        while (i < 7 && h >= HL[i + 1]) i++;
+        return i;
+      }
+      function temp(h) {
+        h = Math.max(0, h);
+        const i = layerOf(h);
+        return TB[i] + BETA[i] * (h - HL[i]);
+      }
+      function grav(h) {
+        h = Math.max(0, h);
+        return G0 * Math.pow(R / (R + h), 2);
+      }
+      function Fden(h, i) {
+        const b = BETA[i],
+          hi = HL[i],
+          T = temp(h),
+          C = TB[i];
+        if (b !== 0) {
+          const num =
+            b * (R + h) * Math.log((b * (h - hi) + C) / (R + h)) +
+            R * b +
+            b * hi -
+            C;
+          const den = (R + h) * Math.pow(b * R + b * hi - C, 2);
+          return (A_CONST * num) / den + Math.log(T);
+        }
+        return (-MM * G0 * R * R) / (RG * T * (R + h));
+      }
+      const K = [-Math.log(RHO0) - Fden(0, 0)];
+      for (let i = 1; i < 8; i++)
+        K.push(K[i - 1] + Fden(HL[i], i - 1) - Fden(HL[i], i));
+      function rho(h) {
+        h = Math.max(0, h);
+        const i = layerOf(h);
+        return Math.exp(-(Fden(h, i) + K[i]));
+      }
+      function pressure(h) {
+        return (rho(h) * RG * temp(h)) / MM;
+      }
+      function vsom(h) {
+        return Math.sqrt((1.4 * RG * temp(h)) / MM);
+      }
+      const MACH_T = [
+        0, 0.5, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 7.0, 9.0, 10.0,
+      ];
+      const CD_T = [
+        0.3, 0.26, 0.375, 0.51, 0.55, 0.47, 0.35, 0.27, 0.21, 0.2, 0.23, 0.26,
+        0.26,
+      ];
+      function cdOf(M) {
+        if (M <= MACH_T[0]) return CD_T[0];
+        if (M >= MACH_T[MACH_T.length - 1]) return CD_T[CD_T.length - 1];
+        let i = 0;
+        while (i < MACH_T.length - 2 && M > MACH_T[i + 1]) i++;
+        return lerp(
+          CD_T[i],
+          CD_T[i + 1],
+          (M - MACH_T[i]) / (MACH_T[i + 1] - MACH_T[i]),
+        );
+      }
+      /* motor — gases LOX/RP-1 como no notebook forcas_foguete */
+      const GG = 1.15,
+        MMG = 0.023,
+        RESPG = RG / MMG,
+        CPG = (GG * RESPG) / (GG - 1),
+        TAD = 3500,
+        TW = 800;
+      function tcOf(vm, cool) {
+        if (vm <= 0) return TW;
+        return TW + (TAD - TW) * (vm / (vm + cool * vm + 1e-9));
+      }
+      function pcOf(vm, Ab, h, cool) {
+        const pa = pressure(h);
+        if (vm <= 0) return pa;
+        const tc = tcOf(vm, cool);
+        return (
+          (vm / Ab) *
+          Math.sqrt((RESPG * tc) / GG) *
+          Math.pow((GG + 1) / 2, (GG + 1) / (2 * (GG - 1)))
+        );
+      }
+      function mueOf(vm, Ab, h, cool) {
+        if (vm <= 0) return 0;
+        const pa = pressure(h),
+          pc = pcOf(vm, Ab, h, cool),
+          tc = tcOf(vm, cool);
+        const ratio = Math.min(pa / Math.max(pc, 1), 1),
+          k = (GG - 1) / GG;
+        return Math.sqrt(
+          Math.max(
+            0,
+            ((2 * GG * RESPG * tc) / (GG - 1)) * (1 - Math.pow(ratio, k)),
+          ),
+        );
+      }
+      /* estágios — dados exatos do notebook */
+      const STAGES = [
+        { A: 289.6015, V: 12181.3369, ms: 133583, mc: 2148213, Ab: 49.677 },
+        { A: 79.4598, V: 1973.8777, ms: 38442, mc: 437595, Ab: 15.021 },
+        { A: 34.3589, V: 621.0478, ms: 17091, mc: 101822, Ab: 3.004 },
+      ];
+      const COLORS = [
+        "#22d3ee",
+        "#a78bfa",
+        "#fbbf24",
+        "#4ade80",
+        "#fb7185",
+        "#60a5fa",
+        "#e879f9",
+        "#a3e635",
+      ];
+
+      /* ============================================================
+   3. CONFIGURAÇÃO AJUSTÁVEL
+============================================================ */
+      const DEFAULTS = {
+        thr: 100,
+        flows: [14000, 1000, 600],
+        profile: "const",
+        amp: 35,
+        c: 1,
+        cool: 0.05,
+        E: 10000,
+        turn: false,
+        pitch: 0,
+        payload: 0,
+        cdScale: 1,
+        wind: 0,
+        drag: true,
+        buoy: true,
+        warp: 1,
+        zoom: 55,
+        qual: 1,
+        guides: true,
+        trail: true,
+        follow: true,
+      };
+      const cfg = JSON.parse(JSON.stringify(DEFAULTS));
+      cfg.flows = [...DEFAULTS.flows];
+      function profileMult(p) {
+        const a = cfg.amp / 100;
+        switch (cfg.profile) {
+          case "up":
+            return clamp(1 + a * (2 * p - 1), 0.05, 2);
+          case "down":
+            return clamp(1 + a * (1 - 2 * p), 0.05, 2);
+          case "pulse":
+            return clamp(1 + a * Math.sin(p * 4 * Math.PI), 0.05, 2);
+          case "step":
+            return p < 0.5 ? 1 : clamp(1 - a, 0.05, 2);
+          default:
+            return 1;
+        }
+      }
+      function zoomScale() {
+        return 0.06 * Math.pow(2.5 / 0.06, cfg.zoom / 100);
+      }
+
+      /* ============================================================
+   4. ESTADO DA MISSÃO
+============================================================ */
+      let S = null,
+        samples = [],
+        events = [],
+        particles = [],
+        debris = [];
+      let phase = "idle",
+        paused = false,
+        countdownT = 0,
+        simAcc = 0,
+        lastSample = 0;
+      function newState() {
+        return {
+          t: 0,
+          x: 0,
+          h: 0,
+          vx: 0,
+          vh: 0,
+          stage: 0,
+          pitch: 0,
+          fuel: STAGES.map((s) => s.mc),
+          mass: STAGES.reduce((a, s) => a + s.ms + s.mc, 0) + cfg.payload,
+          vm: 0,
+          thrust: 0,
+          dragF: 0,
+          acc: 0,
+          mach: 0,
+          q: 0,
+          maxH: 0,
+          maxV: 0,
+          maxMach: 0,
+          maxQ: 0,
+          maxAcc: 0,
+          maxThrust: 0,
+          downrange: 0,
+          flags: {},
+          apogeeT: 0,
+        };
+      }
+      function resetSim() {
+        S = newState();
+        samples = [];
+        events = [];
+        particles = [];
+        debris = [];
+        phase = "idle";
+        paused = false;
+        countdownT = 0;
+        simAcc = 0;
+        lastSample = 0;
+        cam.h = 0;
+        cam.x = 0;
+        $("endOverlay").style.display = "none";
+        $("countdown").style.display = "none";
+        $("btnLaunch").disabled = false;
+        $("btnLaunch").textContent = "🚀 LANÇAR";
+        $("btnPause").disabled = true;
+        $("btnPause").textContent = "⏸";
+        $("eventLog").innerHTML = "";
+        setStatus("PRONTO", "ok");
+        recordSample();
+        refreshLiveCharts();
+        renderTable();
+      }
+      function setStatus(txt, cls) {
+        const p = $("statusPill");
+        p.textContent = txt;
+        p.className = "pill " + cls;
+      }
+      function logEvent(txt, color = "#22d3ee", beep = 0) {
+        events.push({ t: S.t, txt, color });
+        const el = document.createElement("div");
+        el.className = "ev";
+        el.innerHTML =
+          '<span class="t">' +
+          fmtClock(S.t) +
+          '</span><span class="dot" style="background:' +
+          color +
+          ";box-shadow:0 0 8px " +
+          color +
+          '"></span><span>' +
+          txt +
+          "</span>";
+        const log = $("eventLog");
+        log.prepend(el);
+        while (log.children.length > 60) log.lastChild.remove();
+        if (beep) Sound.beep(beep);
+      }
+      function currentVolume() {
+        let v = 0;
+        for (let i = S.stage; i < 3; i++) v += STAGES[i].V;
+        return v;
+      }
+      function forces(st) {
+        const h = Math.max(0, st.h),
+          g = grav(h),
+          r = rho(h),
+          T = temp(h);
+        const stage = Math.min(st.stage, 2),
+          sd = STAGES[stage];
+        const vs = vsom(h);
+        const rvx = st.vx - cfg.wind,
+          rvh = st.vh,
+          rv = Math.hypot(rvx, rvh);
+        const M = rv / vs,
+          Cd = cdOf(M) * cfg.cdScale;
+        let fx = 0,
+          fh = -st.mass * g;
+        let dragMag = 0;
+        if (cfg.drag && rv > 0) {
+          dragMag = 0.5 * Cd * r * sd.A * rv * rv;
+          fx -= (dragMag * rvx) / rv;
+          fh -= (dragMag * rvh) / rv;
+        }
+        if (cfg.buoy) fh += r * g * currentVolume();
+        let thrust = 0,
+          mue = 0,
+          pc = pressure(h),
+          tc = TW;
+        if (st.vm > 0) {
+          tc = tcOf(st.vm, cfg.cool);
+          pc = pcOf(st.vm, sd.Ab, h, cfg.cool);
+          mue = mueOf(st.vm, sd.Ab, h, cfg.cool);
+          thrust = cfg.c * (st.vm * mue + (pc - pressure(h)) * sd.Ab);
+          fx += thrust * Math.sin(st.pitch);
+          fh += thrust * Math.cos(st.pitch);
+        }
+        return {
+          ax: fx / st.mass,
+          ah: fh / st.mass,
+          thrust,
+          dragMag,
+          mach: M,
+          q: 0.5 * r * rv * rv,
+          vs,
+          Cd,
+          rho: r,
+          T,
+          g,
+          mue,
+          pc,
+          tc,
+        };
+      }
+      function step(dt) {
+        const st = S;
+        /* vazão do estágio com perfil + acelerador */
+        if (st.stage < 3 && st.fuel[st.stage] > 0) {
+          const p = 1 - st.fuel[st.stage] / STAGES[st.stage].mc;
+          st.vm = cfg.flows[st.stage] * profileMult(p) * (cfg.thr / 100);
+        } else st.vm = 0;
+        /* programa de inclinação (virada gravitacional) */
+        if (cfg.turn && cfg.pitch > 0) {
+          const target =
+            ((cfg.pitch * Math.PI) / 180) * clamp((st.h - 1000) / 69000, 0, 1);
+          st.pitch += clamp(
+            target - st.pitch,
+            -0.035 * dt * 60 * 0.02,
+            0.035 * dt * 60 * 0.02,
+          );
+        }
+        /* integração trapezoidal (Heun) como no notebook lancamento */
+        const f1 = forces(st);
+        const pvx = st.vx + f1.ax * dt,
+          pvh = st.vh + f1.ah * dt;
+        const pred = { ...st, vx: pvx, vh: pvh, h: st.h + st.vh * dt };
+        const f2 = forces(pred);
+        const ovx = st.vx,
+          ovh = st.vh;
+        st.vx += (dt / 2) * (f1.ax + f2.ax);
+        st.vh += (dt / 2) * (f1.ah + f2.ah);
+        st.x += (dt / 2) * (ovx + st.vx);
+        st.h += (dt / 2) * (ovh + st.vh);
+        st.t += dt;
+        if (st.vm > 0 && st.stage < 3) {
+          const burn = Math.min(st.vm * dt, st.fuel[st.stage]);
+          st.fuel[st.stage] -= burn;
+          st.mass -= burn;
+        }
+        const f = forces(st);
+        st.thrust = f.thrust;
+        st.dragF = f.dragMag;
+        st.mach = f.mach;
+        st.q = f.q;
+        st.acc = Math.hypot(f.ax, f.ah);
+        /* separação de estágio */
+        if (st.stage < 3 && st.fuel[st.stage] <= 0) {
+          if (st.stage < 2) {
+            const sd = STAGES[st.stage];
+            const M2 = sd.ms,
+              M1 = st.mass - M2;
+            const dv = Math.sqrt((M2 * cfg.E) / (M1 * (M1 + M2)));
+            st.vx += dv * Math.sin(st.pitch);
+            st.vh += dv * Math.cos(st.pitch);
+            st.mass -= M2;
+            debris.push({
+              slice: st.stage,
+              x: st.x,
+              h: st.h,
+              vx: st.vx - 2 * Math.sin(st.pitch),
+              vh: st.vh - 3 * Math.cos(st.pitch),
+              rot: st.pitch,
+              vr: (Math.random() - 0.5) * 1.2,
+              age: 0,
+            });
+            st.stage++;
+            logEvent(
+              "Separação S" +
+                st.stage +
+                " → S" +
+                (st.stage + 1) +
+                " · Δv = " +
+                dv.toFixed(2) +
+                " m/s",
+              "#a78bfa",
+              660,
+            );
+            setStatus("ESTÁGIO " + (st.stage + 1), "fly");
+            Sound.beep(520, 0.09);
+            setTimeout(() => Sound.beep(780, 0.12), 110);
+          } else {
+            st.stage = 3;
+            st.vm = 0;
+            logEvent("MECO — corte do motor S3", "#ffb02e", 440);
+            setStatus("COASTING", "warn");
+          }
+        }
+        /* recordes & eventos */
+        const spd = Math.hypot(st.vx, st.vh);
+        if (st.h > st.maxH) {
+          st.maxH = st.h;
+          st.apogeeT = st.t;
+        }
+        st.maxV = Math.max(st.maxV, spd);
+        st.maxMach = Math.max(st.maxMach, st.mach);
+        st.maxQ = Math.max(st.maxQ, st.q);
+        st.maxAcc = Math.max(st.maxAcc, st.acc);
+        st.maxThrust = Math.max(st.maxThrust, st.thrust);
+        st.downrange = Math.max(st.downrange, Math.abs(st.x));
+        if (!st.flags.lift && st.h > 0.5) {
+          st.flags.lift = 1;
+          logEvent(
+            "Decolagem! TWR = " + (st.thrust / (st.mass * grav(0))).toFixed(2),
+            "#3ddc84",
+            880,
+          );
+        }
+        if (!st.flags.m1 && st.mach >= 1) {
+          st.flags.m1 = 1;
+          logEvent("Mach 1 — regime supersônico", "#e879f9", 980);
+        }
+        if (!st.flags.mq && st.q > 1000 && st.q < st.maxQ * 0.98 && st.t > 10) {
+          st.flags.mq = 1;
+          logEvent(
+            "Max-Q ≈ " + (st.maxQ / 1000).toFixed(1) + " kPa",
+            "#fbbf24",
+          );
+        }
+        if (!st.flags.karman && st.h >= 100000) {
+          st.flags.karman = 1;
+          logEvent("Linha de Kármán (100 km) — espaço!", "#22d3ee", 1040);
+        }
+        if (!st.flags.apo && st.stage === 3 && st.vh < 0) {
+          st.flags.apo = 1;
+          logEvent(
+            "Apogeu: " + (st.maxH / 1000).toFixed(1) + " km",
+            "#a3e635",
+            600,
+          );
+        }
+        /* impacto */
+        if (st.h <= 0 && st.t > 2) {
+          st.h = 0;
+          st.vx = 0;
+          st.vh = 0;
+          st.vm = 0;
+          phase = "ended";
+          logEvent("Fim da missão — solo alcançado", "#ff4d6d", 220);
+          setStatus("ENCERRADA", "bad");
+          showEnd();
+        }
+        /* amostragem ~10 Hz */
+        if (st.t - lastSample >= 0.1) {
+          lastSample = st.t;
+          recordSample();
+        }
+      }
+      function recordSample() {
+        const st = S,
+          spd = Math.hypot(st.vx, st.vh);
+        const fuelTot = st.fuel.reduce((a, b) => a + b, 0),
+          fuelMax = STAGES.reduce((a, s) => a + s.mc, 0);
+        samples.push({
+          t: st.t,
+          h: st.h,
+          x: st.x,
+          v: spd,
+          vh: st.vh,
+          a: st.acc,
+          mach: st.mach,
+          q: st.q,
+          rho: rho(st.h),
+          T: temp(st.h),
+          g: grav(st.h),
+          thr: st.thrust,
+          drag: st.dragF,
+          m: st.mass,
+          fuel: (100 * fuelTot) / fuelMax,
+          stage: st.stage,
+          vm: st.vm,
+        });
+        if (samples.length > 24000) {
+          samples = samples.filter((_, i) => i % 2 === 0);
+        }
+      }
+      function showEnd() {
+        $("btnLaunch").disabled = true;
+        $("btnPause").disabled = true;
+        const ov = $("endOverlay");
+        ov.style.display = "grid";
+        $("endTitle").textContent = S.flags.karman
+          ? "🌌 MISSÃO ORBITAL-CLASS"
+          : "🏁 MISSÃO ENCERRADA";
+        $("endSub").textContent =
+          "Duração " +
+          fmtClock(S.t) +
+          " · " +
+          (S.flags.karman ? "alcançou o espaço" : "voo subspace");
+        const rows = [
+          ["Apogeu", (S.maxH / 1000).toFixed(1) + " km"],
+          ["Vel. máx", fmtN(S.maxV) + " m/s"],
+          ["Mach máx", S.maxMach.toFixed(2)],
+          ["Max-Q", (S.maxQ / 1000).toFixed(1) + " kPa"],
+          ["Acel. máx", (S.maxAcc / G0).toFixed(1) + " g"],
+          ["Alcance", (S.downrange / 1000).toFixed(1) + " km"],
+          ["Empuxo máx", (S.maxThrust / 1e6).toFixed(1) + " MN"],
+          ["Estágios", Math.min(S.stage + 1, 3) + " / 3"],
+        ];
+        $("endStats").innerHTML = rows
+          .map(
+            (r) =>
+              '<div><div class="k">' +
+              r[0] +
+              '</div><div class="v">' +
+              r[1] +
+              "</div></div>",
+          )
+          .join("");
+      }
+
+      /* ============================================================
+   5. SOM — sintetizado, ligado ao que acontece na tela
+============================================================ */
+      const Sound = {
+        ctx: null,
+        master: null,
+        engGain: null,
+        engFilter: null,
+        muted: false,
+        init() {
+          if (this.ctx) return;
+          try {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AC();
+            this.master = this.ctx.createGain();
+            this.master.gain.value = this.muted ? 0 : 0.9;
+            this.master.connect(this.ctx.destination);
+            const len = this.ctx.sampleRate * 2,
+              buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate),
+              d = buf.getChannelData(0);
+            for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+            const src = this.ctx.createBufferSource();
+            src.buffer = buf;
+            src.loop = true;
+            this.engFilter = this.ctx.createBiquadFilter();
+            this.engFilter.type = "lowpass";
+            this.engFilter.frequency.value = 320;
+            this.engGain = this.ctx.createGain();
+            this.engGain.gain.value = 0;
+            src.connect(this.engFilter);
+            this.engFilter.connect(this.engGain);
+            this.engGain.connect(this.master);
+            src.start();
+          } catch (e) {}
+        },
+        resume() {
+          this.init();
+          if (this.ctx && this.ctx.state === "suspended") this.ctx.resume();
+        },
+        engine(thr, dens) {
+          if (!this.ctx) return;
+          const target = this.muted
+            ? 0
+            : (0.02 + 0.3 * thr) * clamp(dens / RHO0, 0, 1) + 0.015 * thr;
+          this.engGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.12);
+          this.engFilter.frequency.setTargetAtTime(
+            220 + 500 * thr,
+            this.ctx.currentTime,
+            0.15,
+          );
+        },
+        beep(f = 880, dur = 0.1, type = "sine", vol = 0.22) {
+          if (!this.ctx || this.muted) return;
+          const o = this.ctx.createOscillator(),
+            g = this.ctx.createGain();
+          o.type = type;
+          o.frequency.value = f;
+          g.gain.value = vol;
+          g.gain.exponentialRampToValueAtTime(
+            0.001,
+            this.ctx.currentTime + dur,
+          );
+          o.connect(g);
+          g.connect(this.master);
+          o.start();
+          o.stop(this.ctx.currentTime + dur + 0.02);
+        },
+        toggle() {
+          this.muted = !this.muted;
+          if (this.master) this.master.gain.value = this.muted ? 0 : 0.9;
+          $("btnSound").textContent = this.muted ? "🔇" : "";
+          return this.muted;
+        },
+      };
+
+      /* ============================================================
+   6. SPRITE — fatiamento automático em 3 estágios + fallback
+============================================================ */
+      let spriteSlices = null,
+        spriteSource = "procedural";
+      function sliceImage(img) {
+        const w = img.naturalWidth || img.width,
+          h = img.naturalHeight || img.height;
+        const cv = document.createElement("canvas");
+        cv.width = w;
+        cv.height = h;
+        const cx = cv.getContext("2d");
+        cx.drawImage(img, 0, 0);
+        let data;
+        try {
+          data = cx.getImageData(0, 0, w, h).data;
+        } catch (e) {
+          return null;
+        }
+        const rows = new Uint8Array(h);
+        for (let y = 0; y < h; y++) {
+          let c = 0;
+          const off = y * w * 4;
+          for (let x = 0; x < w; x += 2) {
+            const i = off + x * 4;
+            if (data[i + 3] > 50 && data[i] + data[i + 1] + data[i + 2] > 90)
+              c++;
+          }
+          rows[y] = c > Math.max(3, w * 0.008) ? 1 : 0;
+        }
+        const bands = [];
+        let start = -1;
+        for (let y = 0; y <= h; y++) {
+          const on = y < h && rows[y];
+          if (on && start < 0) start = y;
+          if (!on && start >= 0) {
+            bands.push([start, y]);
+            start = -1;
+          }
+        }
+        /* funde lacunas pequenas */
+        const merged = [];
+        for (const b of bands) {
+          if (merged.length && b[0] - merged[merged.length - 1][1] < h * 0.02)
+            merged[merged.length - 1][1] = b[1];
+          else merged.push([...b]);
+        }
+        let use = merged.filter((b) => b[1] - b[0] > h * 0.04);
+        if (use.length < 3) {
+          const top = merged.length ? merged[0][0] : 0,
+            bot = merged.length ? merged[merged.length - 1][1] : h;
+          use = [
+            [top, top + (bot - top) / 3],
+            [top + (bot - top) / 3, top + (2 * (bot - top)) / 3],
+            [top + (2 * (bot - top)) / 3, bot],
+          ];
+        }
+        use = use.slice(0, 3); /* topo→base = S3, S2, S1 */
+        const out = [];
+        for (const [y0, y1] of use) {
+          let x0 = w,
+            x1 = 0;
+          for (let y = y0; y < y1; y++) {
+            const off = y * w * 4;
+            for (let x = 0; x < w; x++) {
+              const i = off + x * 4;
+              if (
+                data[i + 3] > 50 &&
+                data[i] + data[i + 1] + data[i + 2] > 90
+              ) {
+                if (x < x0) x0 = x;
+                if (x > x1) x1 = x;
+              }
+            }
+          }
+          if (x1 <= x0) {
+            x0 = 0;
+            x1 = w;
+          }
+          const sw = x1 - x0 + 1,
+            sh = y1 - y0;
+          const sc = document.createElement("canvas");
+          sc.width = sw;
+          sc.height = sh;
+          sc.getContext("2d").drawImage(cv, x0, y0, sw, sh, 0, 0, sw, sh);
+          out.push(sc);
+        }
+        return [out[2], out[1], out[0]]; /* índice 0 = S1 (base) */
+      }
+      function proceduralSprite() {
+        function mk(w, h, draw) {
+          const c = document.createElement("canvas");
+          c.width = w;
+          c.height = h;
+          draw(c.getContext("2d"), w, h);
+          return c;
+        }
+        const body = (cx, w, h, fins, bells) => {
+          cx.fillStyle = "#f1ede2";
+          cx.fillRect(w * 0.18, 0, w * 0.64, h);
+          cx.fillStyle = "#1b202b";
+          cx.fillRect(w * 0.18, 0, w * 0.16, h * 0.14);
+          cx.fillRect(w * 0.66, 0, w * 0.16, h * 0.14);
+          cx.fillRect(w * 0.18, h * 0.72, w * 0.16, h * 0.16);
+          cx.fillRect(w * 0.66, h * 0.72, w * 0.16, h * 0.16);
+          cx.strokeStyle = "rgba(0,0,0,.18)";
+          cx.lineWidth = 2;
+          for (let i = 1; i < 4; i++) {
+            cx.beginPath();
+            cx.moveTo(w * 0.18, (h * i) / 4);
+            cx.lineTo(w * 0.82, (h * i) / 4);
+            cx.stroke();
+          }
+          cx.fillStyle = "#6d28d9";
+          cx.font =
+            "bold " + Math.round(w * 0.16) + "px " + "Segoe UI,sans-serif";
+          cx.textAlign = "center";
+          const letters = "PEN";
+          for (let i = 0; i < 3; i++)
+            cx.fillText(letters[i], w * 0.5, h * 0.3 + i * w * 0.17);
+          cx.font = Math.round(w * 0.2) + "px serif";
+          cx.fillText("🧠", w * 0.5, h * 0.7);
+          if (fins) {
+            cx.fillStyle = "#e8e4d8";
+            cx.beginPath();
+            cx.moveTo(w * 0.18, h * 0.86);
+            cx.lineTo(0, h);
+            cx.lineTo(w * 0.18, h);
+            cx.fill();
+            cx.beginPath();
+            cx.moveTo(w * 0.82, h * 0.86);
+            cx.lineTo(w, h);
+            cx.lineTo(w * 0.82, h);
+            cx.fill();
+          }
+          cx.fillStyle = "#3a4150";
+          for (let i = 0; i < bells; i++) {
+            const bx = w * (0.3 + (0.4 * i) / Math.max(1, bells - 1));
+            cx.beginPath();
+            cx.moveTo(bx - w * 0.05, h);
+            cx.lineTo(bx + w * 0.05, h);
+            cx.lineTo(bx + w * 0.08, h + w * 0.1);
+            cx.lineTo(bx - w * 0.08, h + w * 0.1);
+            cx.fill();
+          }
+        };
+        const s1 = mk(230, 660, (cx, w, h) => body(cx, w, h * 0.94, true, 5));
+        const s2 = mk(150, 340, (cx, w, h) => body(cx, w, h * 0.92, false, 2));
+        const s3 = mk(120, 430, (cx, w, h) => {
+          cx.strokeStyle = "#d8d4c8";
+          cx.lineWidth = 4;
+          cx.beginPath();
+          cx.moveTo(w / 2, 0);
+          cx.lineTo(w / 2, h * 0.22);
+          cx.stroke();
+          cx.fillStyle = "#f1ede2";
+          cx.beginPath();
+          cx.moveTo(w / 2, h * 0.16);
+          cx.lineTo(w * 0.82, h * 0.5);
+          cx.lineTo(w * 0.82, h * 0.86);
+          cx.lineTo(w * 0.18, h * 0.86);
+          cx.lineTo(w * 0.18, h * 0.5);
+          cx.closePath();
+          cx.fill();
+          cx.fillStyle = "#1b202b";
+          cx.fillRect(w * 0.18, h * 0.5, w * 0.64, h * 0.08);
+          cx.fillStyle = "#7fb2d8";
+          cx.fillRect(w * 0.42, h * 0.62, w * 0.16, h * 0.12);
+          cx.fillStyle = "#3a4150";
+          cx.beginPath();
+          cx.moveTo(w * 0.4, h * 0.86);
+          cx.lineTo(w * 0.6, h * 0.86);
+          cx.lineTo(w * 0.66, h);
+          cx.lineTo(w * 0.34, h);
+          cx.fill();
+        });
+        return [s1, s2, s3];
+      }
+      function setSprite(slices, source) {
+        spriteSlices = slices;
+        spriteSource = source;
+        $("hudSprite").textContent = "SPRITE: " + source.toUpperCase();
+        $("spriteNote").innerHTML =
+          source === "arquivo"
+            ? "✅ Sprite carregado e fatiado em <b>3 estágios</b> automaticamente."
+            : "⚠️ Usando sprite procedural. Coloque a imagem ao lado de <b>main.py</b> ou carregue aqui / arraste sobre o canvas.";
+      }
+      function loadSpriteFromURL(url) {
+        const img = new Image();
+        img.onload = () => {
+          const sl = sliceImage(img);
+          setSprite(sl || proceduralSprite(), sl ? "arquivo" : "procedural");
+        };
+        img.onerror = () => setSprite(proceduralSprite(), "procedural");
+        img.src = url;
+      }
+      function loadSpriteFile(file) {
+        const rd = new FileReader();
+        rd.onload = () => loadSpriteFromURL(rd.result);
+        rd.readAsDataURL(file);
+      }
+
+      /* ============================================================
+   7. MOTOR DE GRÁFICOS (canvas, sem libs)
+============================================================ */
+      class Chart {
+        constructor(id, opt) {
+          this.cv = $(id);
+          this.ctx = this.cv.getContext("2d");
+          this.opt = Object.assign(
+            {
+              series: [],
+              xLabel: "",
+              yLabel: "",
+              logY: false,
+              xFmt: fmtSI,
+              yFmt: fmtSI,
+              domain: null,
+              marker: null,
+              fill: false,
+              yMin: null,
+            },
+            opt,
+          );
+          this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+          this.w = 0;
+          this.h = 0;
+          this.hover = null;
+          new ResizeObserver(() => this.resize()).observe(
+            this.cv.parentElement,
+          );
+          this.cv.addEventListener("mousemove", (e) => {
+            const r = this.cv.getBoundingClientRect();
+            this.hover = { x: e.clientX - r.left, y: e.clientY - r.top };
+            this.draw();
+          });
+          this.cv.addEventListener("mouseleave", () => {
+            this.hover = null;
+            this.draw();
+          });
+          this.resize();
+        }
+        resize() {
+          const r = this.cv.parentElement.getBoundingClientRect();
+          if (r.width < 30 || r.height < 30) return;
+          this.w = r.width;
+          this.h = r.height;
+          this.cv.width = this.w * this.dpr;
+          this.cv.height = this.h * this.dpr;
+          this.cv.style.width = this.w + "px";
+          this.cv.style.height = this.h + "px";
+          this.draw();
+        }
+        draw() {
+          if (this.w < 30) return;
+          const c = this.ctx,
+            o = this.opt;
+          c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+          c.clearRect(0, 0, this.w, this.h);
+          const M = { l: 58, r: 14, t: 12, b: 30 },
+            pw = this.w - M.l - M.r,
+            ph = this.h - M.t - M.b;
+          let x0 = Infinity,
+            x1 = -Infinity,
+            y0 = Infinity,
+            y1 = -Infinity;
+          for (const s of o.series)
+            for (const p of s.data) {
+              if (p[0] < x0) x0 = p[0];
+              if (p[0] > x1) x1 = p[0];
+              const y = o.logY ? Math.log10(Math.max(p[1], 1e-12)) : p[1];
+              if (y < y0) y0 = y;
+              if (y > y1) y1 = y;
+            }
+          if (o.domain) {
+            x0 = o.domain[0];
+            x1 = o.domain[1];
+          }
+          if (!isFinite(x0)) {
+            x0 = 0;
+            x1 = 1;
+            y0 = 0;
+            y1 = 1;
+          }
+          if (o.yMin !== null)
+            y0 = Math.min(y0, o.logY ? Math.log10(o.yMin) : o.yMin);
+          if (x1 === x0) x1 = x0 + 1;
+          if (y1 === y0) y1 = y0 + 1;
+          const pad = (y1 - y0) * 0.08;
+          y0 -= pad;
+          y1 += pad;
+          const X = (v) => M.l + ((v - x0) / (x1 - x0)) * pw;
+          const Y = (v) =>
+            M.t +
+            ph -
+            (((o.logY ? Math.log10(Math.max(v, 1e-12)) : v) - y0) / (y1 - y0)) *
+              ph;
+          /* grade + ticks */
+          c.font = "10px " + "Cascadia Code,Consolas,monospace";
+          c.fillStyle = "#5d6c88";
+          c.strokeStyle = "rgba(34,48,74,.55)";
+          c.lineWidth = 1;
+          const ny = 5;
+          for (let i = 0; i <= ny; i++) {
+            const yv = y0 + ((y1 - y0) * i) / ny,
+              yy = Y(o.logY ? Math.pow(10, yv) : yv);
+            c.beginPath();
+            c.moveTo(M.l, yy);
+            c.lineTo(this.w - M.r, yy);
+            c.stroke();
+            c.textAlign = "right";
+            c.fillText(o.yFmt(o.logY ? Math.pow(10, yv) : yv), M.l - 6, yy + 3);
+          }
+          const nx = 5;
+          for (let i = 0; i <= nx; i++) {
+            const xv = x0 + ((x1 - x0) * i) / nx,
+              xx = X(xv);
+            c.beginPath();
+            c.moveTo(xx, M.t);
+            c.lineTo(xx, M.t + ph);
+            c.stroke();
+            c.textAlign = "center";
+            c.fillText(o.xFmt(xv), xx, this.h - 10);
+          }
+          c.fillStyle = "#93a1ba";
+          c.textAlign = "left";
+          c.fillText(o.yLabel, M.l, 10);
+          c.textAlign = "right";
+          c.fillText(o.xLabel, this.w - M.r, this.h - 10);
+          /* séries */
+          o.series.forEach((s, si) => {
+            const d = s.data;
+            if (d.length < 2) return;
+            const stride = Math.max(1, Math.floor(d.length / 900));
+            c.save();
+            c.beginPath();
+            c.rect(M.l, M.t, pw, ph);
+            c.clip();
+            if (o.fill && si === 0) {
+              const gr = c.createLinearGradient(0, M.t, 0, M.t + ph);
+              gr.addColorStop(0, s.color + "44");
+              gr.addColorStop(1, s.color + "00");
+              c.beginPath();
+              c.moveTo(
+                X(d[0][0]),
+                Y(o.logY ? Math.max(d[0][1], 1e-12) : d[0][1]),
+              );
+              for (let i = stride; i < d.length; i += stride)
+                c.lineTo(X(d[i][0]), Y(d[i][1]));
+              c.lineTo(X(d[d.length - 1][0]), M.t + ph);
+              c.lineTo(X(d[0][0]), M.t + ph);
+              c.closePath();
+              c.fillStyle = gr;
+              c.fill();
+            }
+            c.beginPath();
+            c.setLineDash(s.dash || []);
+            c.strokeStyle = s.color;
+            c.lineWidth = 1.8;
+            c.shadowColor = s.color;
+            c.shadowBlur = 6;
+            let first = true;
+            for (let i = 0; i < d.length; i += stride) {
+              const px = X(d[i][0]),
+                py = Y(d[i][1]);
+              if (first) {
+                c.moveTo(px, py);
+                first = false;
+              } else c.lineTo(px, py);
+            }
+            c.stroke();
+            c.restore();
+          });
+          /* marcador (posição do foguete) */
+          if (o.marker) {
+            const mv = o.marker();
+            if (mv !== null && isFinite(mv) && mv >= x0 && mv <= x1) {
+              const mx = X(mv);
+              c.save();
+              c.setLineDash([4, 4]);
+              c.strokeStyle = "#e9eef8";
+              c.lineWidth = 1;
+              c.globalAlpha = 0.75;
+              c.beginPath();
+              c.moveTo(mx, M.t);
+              c.lineTo(mx, M.t + ph);
+              c.stroke();
+              c.restore();
+              c.fillStyle = "#fff";
+              c.beginPath();
+              c.arc(mx, M.t + 4, 3, 0, TAU);
+              c.fill();
+            }
+          }
+          /* hover */
+          if (this.hover && this.hover.x > M.l && this.hover.x < this.w - M.r) {
+            const xv = x0 + ((this.hover.x - M.l) / pw) * (x1 - x0);
+            c.save();
+            c.strokeStyle = "rgba(233,238,248,.35)";
+            c.beginPath();
+            c.moveTo(this.hover.x, M.t);
+            c.lineTo(this.hover.x, M.t + ph);
+            c.stroke();
+            const lines = [];
+            for (const s of o.series) {
+              const d = s.data;
+              if (!d.length) continue;
+              let best = d[0],
+                bd = Infinity;
+              for (
+                let i = 0;
+                i < d.length;
+                i += Math.max(1, Math.floor(d.length / 400))
+              ) {
+                const dd = Math.abs(d[i][0] - xv);
+                if (dd < bd) {
+                  bd = dd;
+                  best = d[i];
+                }
+              }
+              lines.push([s.color, s.label + ": " + o.yFmt(best[1])]);
+              c.fillStyle = s.color;
+              c.beginPath();
+              c.arc(X(best[0]), Y(best[1]), 3.5, 0, TAU);
+              c.fill();
+            }
+            const bw = 150,
+              bh = 16 + lines.length * 14;
+            let bx = this.hover.x + 10;
+            if (bx + bw > this.w - M.r) bx = this.hover.x - bw - 10;
+            const by = clamp(this.hover.y - bh / 2, M.t, M.t + ph - bh);
+            c.fillStyle = "rgba(8,12,24,.92)";
+            c.strokeStyle = "#31456b";
+            c.beginPath();
+            c.roundRect(bx, by, bw, bh, 7);
+            c.fill();
+            c.stroke();
+            c.fillStyle = "#93a1ba";
+            c.textAlign = "left";
+            c.fillText(o.xFmt(xv), bx + 8, by + 12);
+            lines.forEach((l, i) => {
+              c.fillStyle = l[0];
+              c.fillText(l[1], bx + 8, by + 26 + i * 14);
+            });
+            c.restore();
+          }
+        }
+      }
+      function curve(fn, a, b, n = 240) {
+        const out = [];
+        for (let i = 0; i <= n; i++) {
+          const x = a + ((b - a) * i) / n;
+          out.push([x, fn(x)]);
+        }
+        return out;
+      }
+      function mapSamples(fn, maxPts = 1200) {
+        const stride = Math.max(1, Math.floor(samples.length / maxPts));
+        const out = [];
+        for (let i = 0; i < samples.length; i += stride) {
+          const s = samples[i];
+          out.push([s.t, fn(s)]);
+        }
+        if (samples.length) {
+          const s = samples[samples.length - 1];
+          out.push([s.t, fn(s)]);
+        }
+        return out;
+      }
+
+      /* ============================================================
+   8. GRÁFICOS — instâncias
+============================================================ */
+      const charts = {};
+      function buildCharts() {
+        charts.alt = new Chart("chAlt", {
+          series: [{ label: "altitude", color: COLORS[0], data: [] }],
+          xLabel: "t (s)",
+          yLabel: "km",
+          yFmt: (v) => fmtSI(v * 1000),
+          fill: true,
+        });
+        charts.vel = new Chart("chVel", {
+          series: [{ label: "|v|", color: COLORS[3], data: [] }],
+          xLabel: "t (s)",
+          yLabel: "m/s",
+          fill: true,
+        });
+        charts.acc = new Chart("chAcc", {
+          series: [{ label: "aceleração", color: COLORS[2], data: [] }],
+          xLabel: "t (s)",
+          yLabel: "g",
+        });
+        charts.mass = new Chart("chMass", {
+          series: [
+            { label: "massa", color: COLORS[0], data: [] },
+            { label: "combustível", color: COLORS[2], data: [], dash: [5, 4] },
+          ],
+          xLabel: "t (s)",
+          yLabel: "t / %",
+        });
+        charts.grav = new Chart("chGrav", {
+          series: [
+            { label: "g(h)", color: COLORS[1], data: curve(grav, 0, 100000) },
+          ],
+          xLabel: "h (km)",
+          yLabel: "m/s²",
+          xFmt: (v) => fmtSI(v),
+          domain: [0, 100000],
+          marker: () => S.h,
+          fill: true,
+        });
+        charts.temp = new Chart("chTemp", {
+          series: [
+            { label: "T(h)", color: COLORS[2], data: curve(temp, 0, 100000) },
+          ],
+          xLabel: "h (km)",
+          yLabel: "K",
+          xFmt: (v) => fmtSI(v),
+          domain: [0, 100000],
+          marker: () => S.h,
+          fill: true,
+        });
+        charts.rho = new Chart("chRho", {
+          series: [
+            {
+              label: "ρ(h)",
+              color: COLORS[0],
+              data: curve(rho, 0, 100000, 320),
+            },
+          ],
+          xLabel: "h (km)",
+          yLabel: "kg/m³",
+          xFmt: (v) => fmtSI(v),
+          domain: [0, 100000],
+          logY: true,
+          marker: () => S.h,
+          fill: true,
+        });
+        charts.pres = new Chart("chPres", {
+          series: [
+            {
+              label: "P(h)",
+              color: COLORS[5],
+              data: curve(pressure, 0, 100000),
+            },
+          ],
+          xLabel: "h (km)",
+          yLabel: "kPa",
+          xFmt: (v) => fmtSI(v),
+          yFmt: (v) => fmtSI(v),
+          domain: [0, 100000],
+          logY: true,
+          marker: () => S.h,
+        });
+        charts.cd = new Chart("chCd", {
+          series: [
+            {
+              label: "C_D",
+              color: COLORS[6],
+              data: MACH_T.map((m, i) => [m, CD_T[i]]),
+            },
+          ],
+          xLabel: "Mach",
+          yLabel: "C_D",
+          domain: [0, 10],
+          marker: () => S.mach,
+          xFmt: (v) => v.toFixed(1),
+          yFmt: (v) => v.toFixed(2),
+        });
+        charts.vs = new Chart("chVs", {
+          series: [
+            { label: "V_s", color: COLORS[7], data: curve(vsom, 0, 100000) },
+          ],
+          xLabel: "h (km)",
+          yLabel: "m/s",
+          xFmt: (v) => fmtSI(v),
+          domain: [0, 100000],
+          marker: () => S.h,
+        });
+        charts.drag = new Chart("chDrag", {
+          series: [
+            { label: "arrasto", color: COLORS[4], data: [] },
+            { label: "q", color: COLORS[2], data: [], dash: [5, 4] },
+          ],
+          xLabel: "t (s)",
+          yLabel: "kN / kPa",
+        });
+        charts.mach = new Chart("chMach", {
+          series: [
+            { label: "Mach", color: COLORS[6], data: [] },
+            { label: "|v|", color: COLORS[0], data: [], dash: [5, 4] },
+          ],
+          xLabel: "t (s)",
+          yLabel: "Mach / m/s",
+        });
+        charts.thrust = new Chart("chThrust", {
+          series: [{ label: "empuxo", color: COLORS[1], data: [] }],
+          xLabel: "t (s)",
+          yLabel: "MN",
+          yFmt: (v) => v.toFixed(1),
+          fill: true,
+        });
+        charts.flow = new Chart("chFlow", {
+          series: [{ label: "multiplicador", color: COLORS[2], data: [] }],
+          xLabel: "queima (%)",
+          yLabel: "×",
+          domain: [0, 100],
+          yFmt: (v) => v.toFixed(2),
+          xFmt: (v) => v.toFixed(0),
+          marker: () =>
+            S.stage < 3
+              ? (1 - S.fuel[S.stage] / STAGES[S.stage].mc) * 100
+              : null,
+        });
+        charts.pc = new Chart("chPc", {
+          series: [{ label: "P_câmara", color: COLORS[3], data: [] }],
+          xLabel: "ṁ (kg/s)",
+          yLabel: "bar",
+          yFmt: (v) => v.toFixed(1),
+          fill: true,
+        });
+        refreshFlowChart();
+        refreshPcChart();
+      }
+      function refreshFlowChart() {
+        charts.flow.opt.series[0].data = curve(
+          (p) => profileMult(p / 100),
+          0,
+          100,
+          120,
+        );
+        charts.flow.draw();
+      }
+      function refreshPcChart() {
+        const Ab = STAGES[Math.min(S ? S.stage : 0, 2)].Ab;
+        charts.pc.opt.series[0].data = curve(
+          (vm) => pcOf(Math.max(vm, 1), Ab, 0, cfg.cool) / 1e5,
+          0,
+          20000,
+          120,
+        );
+        charts.pc.draw();
+      }
+      // Atribuição segura: só alimenta o gráfico se ele já existir.
+      function feedChart(key, idx, fn) {
+        const c = charts[key];
+        if (c && c.opt && c.opt.series && c.opt.series[idx]) {
+          c.opt.series[idx].data = mapSamples(fn);
+        }
+      }
+
+      function refreshLiveCharts() {
+        // Boot ainda não terminou (resetSim roda antes dos gráficos).
+        // Sai sem erro; o loop e o próximo reset chamam de novo.
+        if (!charts || !charts.alt) return;
+
+        feedChart("alt", 0, (s) => s.h / 1000); // km
+        feedChart("vel", 0, (s) => s.v ?? Math.hypot(s.vx ?? 0, s.vh ?? 0)); // m/s
+        feedChart("acc", 0, (s) => (s.a ?? s.acc ?? 0) / 9.80665); // g
+        feedChart("mass", 0, (s) => (s.m ?? s.mass ?? 0) / 1000); // t
+        feedChart("thrust", 0, (s) => (s.thrust ?? s.T ?? 0) / 1e6); // MN
+        feedChart("drag", 0, (s) => (s.drag ?? s.Fd ?? 0) / 1e6); // MN
+        feedChart("q", 0, (s) => (s.q ?? s.Q ?? 0) / 1000); // kPa
+        feedChart("mach", 0, (s) => s.mach ?? s.M ?? 0);
+
+        // Redesenha só os gráficos que existem e estão visíveis.
+        for (const k in charts) {
+          const c = charts[k];
+          if (c && typeof c.draw === "function" && c.w > 40) c.draw();
+        }
+      }
+
+      /* ============================================================
+   9. COLUNAS ATMOSFÉRICAS (gradientes) + RENDER DE VOO
+============================================================ */
+      function tempColor(T) {
+        const t = clamp((T - 180) / 120, 0, 1);
+        const hue = lerp(225, 10, t);
+        return "hsl(" + hue + ",85%," + lerp(38, 55, t) + "%)";
+      }
+      function drawColumn(id, mode) {
+        const cv = $(id),
+          par = cv.parentElement.getBoundingClientRect();
+        if (par.width < 30) return;
+        const dpr = Math.min(devicePixelRatio || 1, 2);
+        cv.width = par.width * dpr;
+        cv.height = par.height * dpr;
+        cv.style.width = par.width + "px";
+        cv.style.height = par.height + "px";
+        const c = cv.getContext("2d");
+        c.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const W = par.width,
+          H = par.height,
+          hMax = 100000,
+          colW = W * 0.44,
+          x0 = W * 0.1;
+        for (let y = 0; y < H; y++) {
+          const h = hMax * (1 - y / H);
+          if (mode === "temp") {
+            c.fillStyle = tempColor(temp(h));
+            c.globalAlpha = 1;
+          } else {
+            c.fillStyle = "#3f8cff";
+            c.globalAlpha = clamp(Math.pow(rho(h) / RHO0, 0.35), 0.02, 1);
+          }
+          c.fillRect(x0, y, colW, 1.5);
+        }
+        c.globalAlpha = 1;
+        c.strokeStyle = "#31456b";
+        c.strokeRect(x0, 0, colW, H);
+        c.font = "10px Cascadia Code,Consolas,monospace";
+        for (let i = 1; i < 8; i++) {
+          const y = H * (1 - HL[i] / hMax);
+          c.strokeStyle = "rgba(160,107,255,.6)";
+          c.setLineDash([3, 3]);
+          c.beginPath();
+          c.moveTo(x0, y);
+          c.lineTo(x0 + colW, y);
+          c.stroke();
+          c.setLineDash([]);
+          c.fillStyle = "#a06bff";
+          c.textAlign = "left";
+          c.fillText(HL[i] / 1000 + " km", x0 + colW + 8, y + 3);
+          c.fillStyle = "#5d6c88";
+          c.fillText(LAYER_NAMES[i], x0 + colW + 8, y + 15);
+        }
+        c.fillStyle = "#93a1ba";
+        c.textAlign = "left";
+        c.fillText("100 km", x0 + colW + 8, 10);
+        c.fillText("0 km", x0 + colW + 8, H - 4);
+        /* marcador do foguete */
+        const my = H * (1 - clamp(S.h, 0, hMax) / hMax);
+        c.fillStyle = "#fff";
+        c.beginPath();
+        c.moveTo(x0 - 12, my);
+        c.lineTo(x0 - 2, my - 5);
+        c.lineTo(x0 - 2, my + 5);
+        c.closePath();
+        c.fill();
+        c.fillStyle = "#22d3ee";
+        c.textAlign = "right";
+        c.fillText("🚀 " + fmtSI(S.h) + "m", x0 - 16, my + 3);
+      }
+      /* ---- câmera & mundo ---- */
+      const cam = { h: 0, x: 0, scale: 0.55 };
+      const flightCv = $("flight");
+      const fctx = flightCv.getContext("2d");
+      let FW = 0,
+        FH = 0,
+        FDPR = 1;
+      function resizeFlight() {
+        const r = $("flightwrap").getBoundingClientRect();
+        FDPR = Math.min(devicePixelRatio || 1, 2);
+        FW = r.width;
+        FH = r.height;
+        flightCv.width = FW * FDPR;
+        flightCv.height = FH * FDPR;
+      }
+      new ResizeObserver(resizeFlight).observe($("flightwrap"));
+      const rng = mulberry(42);
+      const stars = Array.from({ length: 240 }, () => ({
+        x: rng(),
+        y: rng(),
+        s: rng() * 1.6 + 0.4,
+        tw: rng() * TAU,
+      }));
+      const clouds = Array.from({ length: 30 }, () => ({
+        x: (rng() - 0.5) * 9000,
+        h: 1200 + rng() * 10000,
+        w: 300 + rng() * 900,
+        a: 0.08 + rng() * 0.12,
+      }));
+      const SKY_STOPS = [
+        [0, "#3a76b8"],
+        [8000, "#2c5c9c"],
+        [16000, "#1d3a6e"],
+        [30000, "#101f44"],
+        [55000, "#080d20"],
+        [100000, "#04060d"],
+        [400000, "#020308"],
+      ];
+      function hex2rgb(h) {
+        return [
+          parseInt(h.slice(1, 3), 16),
+          parseInt(h.slice(3, 5), 16),
+          parseInt(h.slice(5, 7), 16),
+        ];
+      }
+      function skyColor(h) {
+        h = Math.max(0, h);
+        for (let i = 0; i < SKY_STOPS.length - 1; i++) {
+          if (h <= SKY_STOPS[i + 1][0]) {
+            const t =
+              (h - SKY_STOPS[i][0]) / (SKY_STOPS[i + 1][0] - SKY_STOPS[i][0]);
+            const a = hex2rgb(SKY_STOPS[i][1]),
+              b = hex2rgb(SKY_STOPS[i + 1][1]);
+            return (
+              "rgb(" +
+              Math.round(lerp(a[0], b[0], t)) +
+              "," +
+              Math.round(lerp(a[1], b[1], t)) +
+              "," +
+              Math.round(lerp(a[2], b[2], t)) +
+              ")"
+            );
+          }
+        }
+        return SKY_STOPS[SKY_STOPS.length - 1][1];
+      }
+      const sx = (x) => FW / 2 + (x - cam.x) * cam.scale;
+      const sy = (h) => FH * 0.62 - (h - cam.h) * cam.scale;
+      function stageDims(i) {
+        const sl = spriteSlices[i];
+        const w0 = Math.sqrt((4 * STAGES[0].A) / Math.PI);
+        const w = w0 * (sl.width / spriteSlices[0].width);
+        return { w, h: (w * sl.height) / sl.width };
+      }
+      function drawFlight(now, dtReal) {
+        if (FW < 10) return;
+        const c = fctx;
+        c.setTransform(FDPR, 0, 0, FDPR, 0, 0);
+        /* câmera */
+        cam.scale = lerp(cam.scale, zoomScale(), 0.12);
+        if (cfg.follow) {
+          cam.h = lerp(cam.h, S.h, 0.1);
+          cam.x = lerp(cam.x, S.x, 0.1);
+        }
+        /* céu */
+        const hTop = cam.h + (FH * 0.62) / cam.scale,
+          hBot = cam.h - (FH * 0.38) / cam.scale;
+        const gr = c.createLinearGradient(0, 0, 0, FH);
+        for (let i = 0; i <= 8; i++)
+          gr.addColorStop(i / 8, skyColor(lerp(hTop, hBot, i / 8)));
+        c.fillStyle = gr;
+        c.fillRect(0, 0, FW, FH);
+        /* estrelas */
+        const starA = clamp((cam.h - 12000) / 40000, 0, 1);
+        if (starA > 0) {
+          for (const s of stars) {
+            const tw = 0.6 + 0.4 * Math.sin(now * 0.002 + s.tw);
+            c.globalAlpha = starA * tw;
+            c.fillStyle = "#dfe9ff";
+            const px = (s.x * FW + cam.x * cam.scale * 0.02) % FW,
+              py = (s.y * FH + cam.h * cam.scale * 0.015) % FH;
+            c.fillRect(px, py, s.s, s.s);
+          }
+          c.globalAlpha = 1;
+        }
+        /* guias de altitude */
+        if (cfg.guides) {
+          const steps = [
+            100, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000,
+          ];
+          let step = steps[steps.length - 1];
+          for (const s of steps) {
+            if (s * cam.scale >= 64) {
+              step = s;
+              break;
+            }
+          }
+          c.font = "10px Cascadia Code,Consolas,monospace";
+          c.textAlign = "left";
+          const hStart = Math.floor(hBot / step) * step;
+          for (let h = hStart; h <= hTop; h += step) {
+            if (h < 0) continue;
+            const y = sy(h);
+            c.strokeStyle = "rgba(147,161,186,.14)";
+            c.beginPath();
+            c.moveTo(0, y);
+            c.lineTo(FW, y);
+            c.stroke();
+            c.fillStyle = "rgba(147,161,186,.55)";
+            c.fillText(fmtSI(h) + "m", 8, y - 4);
+          }
+          for (let i = 1; i < 8; i++) {
+            const y = sy(HL[i]);
+            if (y < -20 || y > FH + 20) continue;
+            c.strokeStyle = "rgba(160,107,255,.35)";
+            c.setLineDash([6, 6]);
+            c.beginPath();
+            c.moveTo(0, y);
+            c.lineTo(FW, y);
+            c.stroke();
+            c.setLineDash([]);
+            c.fillStyle = "rgba(160,107,255,.8)";
+            c.textAlign = "right";
+            c.fillText(
+              LAYER_NAMES[i] + " · " + HL[i] / 1000 + " km",
+              FW - 10,
+              y - 5,
+            );
+            c.textAlign = "left";
+          }
+          const yk = sy(100000);
+          if (yk > -20 && yk < FH + 20) {
+            c.strokeStyle = "rgba(34,211,238,.7)";
+            c.setLineDash([10, 6]);
+            c.lineWidth = 1.5;
+            c.beginPath();
+            c.moveTo(0, yk);
+            c.lineTo(FW, yk);
+            c.stroke();
+            c.setLineDash([]);
+            c.lineWidth = 1;
+            c.fillStyle = "#22d3ee";
+            c.textAlign = "right";
+            c.fillText("LINHA DE KÁRMÁN · 100 km", FW - 10, yk - 6);
+            c.textAlign = "left";
+          }
+        }
+        /* nuvens */
+        for (const cl of clouds) {
+          const y = sy(cl.h);
+          if (y < -80 || y > FH + 80) continue;
+          const x = sx(cl.x * 0.9);
+          const w = cl.w * cam.scale;
+          c.globalAlpha = cl.a;
+          c.fillStyle = "#e8f0fa";
+          c.beginPath();
+          c.ellipse(x, y, w, w * 0.22, 0, 0, TAU);
+          c.fill();
+          c.beginPath();
+          c.ellipse(x + w * 0.4, y - w * 0.06, w * 0.6, w * 0.16, 0, 0, TAU);
+          c.fill();
+        }
+        c.globalAlpha = 1;
+        /* solo & plataforma */
+        const gy = sy(0);
+        if (gy < FH + 60) {
+          const gg = c.createLinearGradient(0, gy, 0, FH);
+          gg.addColorStop(0, "#131c2e");
+          gg.addColorStop(1, "#0a0f18");
+          c.fillStyle = gg;
+          c.fillRect(0, gy, FW, FH - gy + 60);
+          c.strokeStyle = "#31456b";
+          c.beginPath();
+          c.moveTo(0, gy);
+          c.lineTo(FW, gy);
+          c.stroke();
+          const px = sx(0);
+          c.fillStyle = "#1c2740";
+          c.fillRect(
+            px - 70 * cam.scale,
+            gy - 6 * cam.scale,
+            140 * cam.scale,
+            6 * cam.scale,
+          );
+          c.strokeStyle = "#3f8cff";
+          c.lineWidth = Math.max(1, 2 * cam.scale);
+          const tw = 46 * cam.scale,
+            th = 120 * cam.scale;
+          c.strokeRect(px - tw - 30 * cam.scale, gy - th, 14 * cam.scale, th);
+          for (let i = 1; i < 5; i++) {
+            c.beginPath();
+            c.moveTo(px - tw - 30 * cam.scale, gy - (th * i) / 5);
+            c.lineTo(px - tw - 16 * cam.scale, gy - (th * i) / 5);
+            c.stroke();
+          }
+          c.lineWidth = 1;
+          c.fillStyle = "#5d6c88";
+          c.font = "10px Cascadia Code,Consolas,monospace";
+          c.textAlign = "center";
+          c.fillText("PLATAFORMA PEN-1", px, gy + 16);
+          c.textAlign = "left";
+        }
+        /* rastro */
+        if (cfg.trail && samples.length > 1) {
+          c.save();
+          c.strokeStyle = "rgba(34,211,238,.55)";
+          c.lineWidth = 1.6;
+          c.shadowColor = "#22d3ee";
+          c.shadowBlur = 8;
+          c.beginPath();
+          const stride = Math.max(1, Math.floor(samples.length / 1500));
+          c.moveTo(sx(samples[0].x), sy(samples[0].h));
+          for (let i = stride; i < samples.length; i += stride)
+            c.lineTo(sx(samples[i].x), sy(samples[i].h));
+          c.lineTo(sx(S.x), sy(S.h));
+          c.stroke();
+          c.restore();
+        }
+        /* detritos de estágios */
+        for (const d of debris) {
+          const sl = spriteSlices[d.slice],
+            dim = stageDims(d.slice);
+          const w = dim.w * cam.scale,
+            h = dim.h * cam.scale;
+          c.save();
+          c.translate(sx(d.x), sy(d.h));
+          c.rotate(d.rot);
+          c.globalAlpha = clamp(1 - d.age / 22, 0, 1);
+          c.drawImage(sl, -w / 2, -h, w, h);
+          c.restore();
+        }
+        c.globalAlpha = 1;
+        /* partículas */
+        for (const p of particles) {
+          const y = sy(p.h);
+          if (y < -40 || y > FH + 40) continue;
+          const a = clamp(p.life / p.max, 0, 1);
+          if (p.type === "smoke") {
+            c.globalAlpha = a * 0.3;
+            c.fillStyle = "#c9d4e4";
+            c.beginPath();
+            c.arc(sx(p.x), y, p.size * cam.scale * (1.6 - a), 0, TAU);
+            c.fill();
+          } else {
+            c.globalAlpha = a;
+            c.fillStyle = p.type === "spark" ? "#ffcf6e" : "#ff8a3c";
+            c.beginPath();
+            c.arc(sx(p.x), y, Math.max(0.6, p.size * cam.scale * a), 0, TAU);
+            c.fill();
+          }
+        }
+        c.globalAlpha = 1;
+        /* foguete */
+        const rx = sx(S.x),
+          ry = sy(S.h);
+        c.save();
+        c.translate(rx, ry);
+        c.rotate(S.pitch);
+        /* chama */
+        const thrNow =
+          S.vm > 0
+            ? clamp(S.vm / (cfg.flows[Math.min(S.stage, 2)] || 1), 0, 1.4)
+            : 0;
+        if (thrNow > 0.02 && phase === "flight") {
+          const dens = rho(S.h) / RHO0;
+          const flick =
+            0.85 +
+            0.3 * Math.sin(now * 0.045) +
+            0.1 * Math.sin(now * 0.013 + 2);
+          const L = (12 + 34 * thrNow) * flick * cam.scale;
+          const W = (3.2 + (1 - dens) * 7) * cam.scale * (0.8 + 0.4 * thrNow);
+          const fg = c.createLinearGradient(0, 0, 0, L);
+          fg.addColorStop(0, "rgba(255,255,255,.95)");
+          fg.addColorStop(0.25, "rgba(255,209,102,.9)");
+          fg.addColorStop(0.6, "rgba(255,122,28,.55)");
+          fg.addColorStop(1, "rgba(255,80,20,0)");
+          c.fillStyle = fg;
+          c.beginPath();
+          c.moveTo(-W * 0.5, 0);
+          c.quadraticCurveTo(-W, L * 0.4, 0, L);
+          c.quadraticCurveTo(W, L * 0.4, W * 0.5, 0);
+          c.closePath();
+          c.fill();
+          c.save();
+          c.globalCompositeOperation = "lighter";
+          c.fillStyle = "rgba(160,200,255," + 0.25 * (1 - dens) + ")";
+          c.beginPath();
+          c.ellipse(0, L * 0.3, W * 0.8, L * 0.35, 0, 0, TAU);
+          c.fill();
+          c.restore();
+        }
+        /* pilha de estágios restantes */
+        let yOff = 0;
+        for (let i = Math.min(S.stage, 2); i < 3; i++) {
+          if (S.stage === 3 && i < 3) {
+            /* coasting: só S3 continua */ if (i !== 2) continue;
+          }
+          const dim = stageDims(i),
+            w = dim.w * cam.scale,
+            h = dim.h * cam.scale;
+          c.drawImage(spriteSlices[i], -w / 2, -yOff - h, w, h);
+          yOff += h;
+        }
+        c.restore();
+        /* emissão de partículas */
+        if (thrNow > 0.02 && phase === "flight" && !paused) {
+          const n = Math.round(3 * cfg.qual * thrNow);
+          for (let i = 0; i < n; i++) {
+            const dirx = Math.sin(S.pitch),
+              dirh = Math.cos(S.pitch);
+            const bx = S.x - dirx * 2,
+              bh = S.h - dirh * 2;
+            if (S.h < 2500 && particles.length < 700 * cfg.qual)
+              particles.push({
+                x: bx + (Math.random() - 0.5) * 8,
+                h: bh,
+                vx: (Math.random() - 0.5) * 30 - dirx * 20,
+                vh: -dirh * 25 - Math.random() * 15,
+                life: 2.5,
+                max: 2.5,
+                size: 4 + Math.random() * 7,
+                type: "smoke",
+              });
+            if (particles.length < 700 * cfg.qual)
+              particles.push({
+                x: bx + (Math.random() - 0.5) * 3,
+                h: bh,
+                vx:
+                  -dirx * (40 + Math.random() * 60) +
+                  (Math.random() - 0.5) * 20,
+                vh: -dirh * (40 + Math.random() * 60),
+                life: 0.5 + Math.random() * 0.4,
+                max: 0.9,
+                size: 1.5 + Math.random() * 2,
+                type: Math.random() < 0.4 ? "spark" : "flame",
+              });
+          }
+        }
+      }
+      function updateParticles(dt) {
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.life -= dt;
+          if (p.life <= 0) {
+            particles.splice(i, 1);
+            continue;
+          }
+          p.x += p.vx * dt;
+          p.h += p.vh * dt;
+          if (p.type === "smoke") {
+            p.vx *= 0.98;
+            p.vh = p.vh * 0.98 + 6 * dt;
+          } else p.vh -= 20 * dt;
+          if (p.h < 0) {
+            p.h = 0;
+            p.vh = Math.abs(p.vh) * 0.2;
+          }
+        }
+        for (let i = debris.length - 1; i >= 0; i--) {
+          const d = debris[i];
+          d.age += dt;
+          d.vh -= grav(d.h) * dt * 0.9;
+          d.vx *= 0.999;
+          d.x += d.vx * dt;
+          d.h += d.vh * dt;
+          d.rot += d.vr * dt;
+          if (d.h < 0 || d.age > 24) debris.splice(i, 1);
+        }
+      }
+
+      /* ============================================================
+   10. HUD / STATS / TABELAS
+============================================================ */
+      const STAT_DEFS = [
+        ["alt", "Altitude", "#22d3ee"],
+        ["vel", "Velocidade", "#3ddc84"],
+        ["acc", "Aceleração", "#fbbf24"],
+        ["mach", "Mach", "#e879f9"],
+        ["q", "Q dinâmica", "#ff7a1c"],
+        ["mass", "Massa", "#60a5fa"],
+        ["thr", "Empuxo", "#a78bfa"],
+        ["twr", "TWR", "#a3e635"],
+        ["fuel", "Combustível", "#ffb02e"],
+        ["apo", "Apogeu", "#22d3ee"],
+        ["down", "Alcance", "#e879f9"],
+        ["stage", "Estágio", "#3ddc84"],
+      ];
+      function buildStats() {
+        $("statCards").innerHTML = STAT_DEFS.map(
+          (d) =>
+            '<div class="stat" style="--c:' +
+            d[2] +
+            '"><div class="k">' +
+            d[1] +
+            '</div><div class="v" id="st_' +
+            d[0] +
+            '">—</div></div>',
+        ).join("");
+        $("sumCards").innerHTML = [
+          ["apo", "Apogeu", "#22d3ee"],
+          ["vel", "Vel. máxima", "#3ddc84"],
+          ["mach", "Mach máx", "#e879f9"],
+          ["q", "Max-Q", "#fbbf24"],
+          ["acc", "Acel. máx", "#ff7a1c"],
+          ["dur", "Duração", "#60a5fa"],
+          ["down", "Alcance", "#a3e635"],
+          ["thr", "Empuxo máx", "#a78bfa"],
+        ]
+          .map(
+            (d) =>
+              '<div class="stat" style="--c:' +
+              d[2] +
+              '"><div class="k">' +
+              d[1] +
+              '</div><div class="v" id="sum_' +
+              d[0] +
+              '">—</div></div>',
+          )
+          .join("");
+        $("fuelRows").innerHTML = [0, 1, 2]
+          .map(
+            (i) =>
+              '<div class="fuelrow"><span>S' +
+              (i + 1) +
+              '</span><span id="fuelPct' +
+              i +
+              '">100%</span></div><div class="fuelbar"><i id="fuelBar' +
+              i +
+              '" style="width:100%"></i></div>',
+          )
+          .join("");
+      }
+      function updateHUD() {
+        const spd = Math.hypot(S.vx, S.vh),
+          g = grav(S.h);
+        $("clock").textContent =
+          phase === "countdown" ? "T−" + countdownT.toFixed(1) : fmtClock(S.t);
+        $("hudAlt").innerHTML = fmtSI(S.h) + " <small>m</small>";
+        $("hudVel").innerHTML = fmtN(spd) + " <small>m/s</small>";
+        $("hudMach").textContent = S.mach.toFixed(2);
+        $("hudQ").innerHTML = (S.q / 1000).toFixed(1) + " <small>kPa</small>";
+        $("hudStage").textContent = S.stage < 3 ? "S" + (S.stage + 1) : "COAST";
+        $("hudThr").style.width = cfg.thr + "%";
+        for (let i = 0; i < 3; i++) {
+          const p = (100 * S.fuel[i]) / STAGES[i].mc;
+          $("fuelBar" + i).style.width = p + "%";
+          $("fuelPct" + i).textContent = p.toFixed(0) + "%";
+        }
+        const set = (id, v) => {
+          const e = $(id);
+          if (e) e.innerHTML = v;
+        };
+        set("st_alt", fmtSI(S.h) + " <small>m</small>");
+        set("st_vel", fmtN(spd) + " <small>m/s</small>");
+        set("st_acc", (S.acc / G0).toFixed(2) + " <small>g</small>");
+        set("st_mach", S.mach.toFixed(2));
+        set("st_q", (S.q / 1000).toFixed(1) + " <small>kPa</small>");
+        set("st_mass", (S.mass / 1000).toFixed(1) + " <small>t</small>");
+        set("st_thr", (S.thrust / 1e6).toFixed(2) + " <small>MN</small>");
+        set("st_twr", (S.thrust / (S.mass * g)).toFixed(2));
+        const fuelTot =
+          (100 * S.fuel.reduce((a, b) => a + b, 0)) /
+          STAGES.reduce((a, s) => a + s.mc, 0);
+        set("st_fuel", fuelTot.toFixed(1) + " <small>%</small>");
+        set("st_apo", (S.maxH / 1000).toFixed(1) + " <small>km</small>");
+        set("st_down", (S.downrange / 1000).toFixed(1) + " <small>km</small>");
+        set("st_stage", S.stage < 3 ? "S" + (S.stage + 1) : "—");
+        set("sum_apo", (S.maxH / 1000).toFixed(1) + " <small>km</small>");
+        set("sum_vel", fmtN(S.maxV) + " <small>m/s</small>");
+        set("sum_mach", S.maxMach.toFixed(2));
+        set("sum_q", (S.maxQ / 1000).toFixed(1) + " <small>kPa</small>");
+        set("sum_acc", (S.maxAcc / G0).toFixed(1) + " <small>g</small>");
+        set("sum_dur", fmtClock(S.t));
+        set("sum_down", (S.downrange / 1000).toFixed(1) + " <small>km</small>");
+        set("sum_thr", (S.maxThrust / 1e6).toFixed(1) + " <small>MN</small>");
+        /* abas de ciência */
+        $("gNow").textContent = grav(S.h).toFixed(3);
+        $("gAlt").textContent = fmtSI(S.h) + " km";
+        $("tNow").textContent = temp(S.h).toFixed(1) + " K";
+        $("tNowC").textContent = (temp(S.h) - 273.15).toFixed(1) + " °C";
+        const li = layerOf(S.h);
+        $("tLayer").textContent = LAYER_NAMES[li];
+        $("tBeta").textContent = (BETA[li] * 1000).toFixed(1) + " K/km";
+        $("rNow").textContent = rho(S.h).toExponential(3);
+        $("pNow").textContent = (pressure(S.h) / 1000).toFixed(2) + " kPa";
+        $("rFrac").textContent = ((100 * rho(S.h)) / RHO0).toFixed(2) + "%";
+        $("aMach").textContent = S.mach.toFixed(2);
+        $("aCd").textContent = (cdOf(S.mach) * cfg.cdScale).toFixed(3);
+        $("aQ").innerHTML = (S.q / 1000).toFixed(1) + " <small>kPa</small>";
+        $("aVs").innerHTML = fmtN(vsom(S.h)) + " <small>m/s</small>";
+        const stage = Math.min(S.stage, 2),
+          sd = STAGES[stage];
+        if (S.vm > 0) {
+          const tc = tcOf(S.vm, cfg.cool),
+            pc = pcOf(S.vm, sd.Ab, S.h, cfg.cool),
+            mue = mueOf(S.vm, sd.Ab, S.h, cfg.cool);
+          $("eTc").textContent = fmtN(tc) + " K";
+          $("ePc").textContent = (pc / 1e5).toFixed(2) + " bar";
+          $("eMue").textContent = fmtN(mue) + " m/s";
+          $("eIsp").textContent = (mue / G0).toFixed(0) + " s";
+        } else {
+          $("eTc").textContent = "— K";
+          $("ePc").textContent = "— bar";
+          $("eMue").textContent = "— m/s";
+          $("eIsp").textContent = "— s";
+        }
+        $("eThr").textContent = (S.thrust / 1e6).toFixed(2) + " MN";
+        $("eTwr").textContent = (S.thrust / (S.mass * grav(S.h))).toFixed(2);
+      }
+      function buildStaticTables() {
+        const gRows = [0, 100000, 400000, 1000000, 2000000, 10000000, 40000000];
+        $("gTable").innerHTML =
+          "<tr><th>h</th><th>g (m/s²)</th><th>% g₀</th></tr>" +
+          gRows
+            .map(
+              (h) =>
+                "<tr><td>" +
+                fmtSI(h) +
+                "m</td><td>" +
+                grav(h).toFixed(3) +
+                "</td><td>" +
+                ((100 * grav(h)) / G0).toFixed(1) +
+                "</td></tr>",
+            )
+            .join("");
+        $("tTable").innerHTML =
+          "<tr><th>camada</th><th>base</th><th>topo</th><th>β (K/km)</th><th>T base</th></tr>" +
+          HL.map(
+            (h, i) =>
+              "<tr><td>" +
+              LAYER_NAMES[i] +
+              "</td><td>" +
+              h / 1000 +
+              " km</td><td>" +
+              (i < 7 ? HL[i + 1] / 1000 + " km" : "∞") +
+              "</td><td>" +
+              (BETA[i] * 1000).toFixed(1) +
+              "</td><td>" +
+              TB[i].toFixed(2) +
+              " K</td></tr>",
+          ).join("");
+      }
+      let tableTimer = 0;
+      function renderTable() {
+        const q = ($("tSearch").value || "").toLowerCase(),
+          sf = $("tStage").value;
+        let rows = samples.filter((s) => sf === "" || String(s.stage) === sf);
+        if (q)
+          rows = rows.filter((s) =>
+            JSON.stringify(s).toLowerCase().includes(q),
+          );
+        const show = rows.slice(-160).reverse();
+        $("tCount").textContent = rows.length + " amostras";
+        $("tTable2").innerHTML =
+          "<tr><th>t</th><th>h (km)</th><th>|v|</th><th>a (g)</th><th>Mach</th><th>q (kPa)</th><th>ρ</th><th>T (K)</th><th>empuxo (MN)</th><th>massa (t)</th><th>comb.%</th><th>est.</th></tr>" +
+          show
+            .map(
+              (s) =>
+                "<tr><td>" +
+                s.t.toFixed(1) +
+                "</td><td>" +
+                (s.h / 1000).toFixed(2) +
+                "</td><td>" +
+                s.v.toFixed(0) +
+                "</td><td>" +
+                (s.a / G0).toFixed(2) +
+                "</td><td>" +
+                s.mach.toFixed(2) +
+                "</td><td>" +
+                (s.q / 1000).toFixed(1) +
+                "</td><td>" +
+                s.rho.toExponential(2) +
+                "</td><td>" +
+                s.T.toFixed(1) +
+                "</td><td>" +
+                (s.thr / 1e6).toFixed(2) +
+                "</td><td>" +
+                (s.m / 1000).toFixed(1) +
+                "</td><td>" +
+                s.fuel.toFixed(1) +
+                "</td><td>" +
+                (s.stage < 3 ? "S" + (s.stage + 1) : "—") +
+                "</td></tr>",
+            )
+            .join("");
+      }
+
+      /* ============================================================
+   11. EXPORTAÇÃO
+============================================================ */
+      function exportCSV() {
+        const head =
+          "t_s,h_m,downrange_m,speed_ms,vh_ms,acc_ms2,mach,q_pa,rho_kgm3,T_K,g_ms2,thrust_N,drag_N,mass_kg,fuel_pct,stage,vm_kgs";
+        const lines = samples.map((s) =>
+          [
+            s.t.toFixed(3),
+            s.h.toFixed(2),
+            s.x.toFixed(2),
+            s.v.toFixed(3),
+            s.vh.toFixed(3),
+            s.a.toFixed(4),
+            s.mach.toFixed(4),
+            s.q.toFixed(2),
+            s.rho.toExponential(6),
+            s.T.toFixed(3),
+            s.g.toFixed(5),
+            s.thr.toFixed(1),
+            s.drag.toFixed(1),
+            s.m.toFixed(2),
+            s.fuel.toFixed(3),
+            s.stage,
+            s.vm.toFixed(2),
+          ].join(","),
+        );
+        download(
+          "pen_telemetria.csv",
+          new Blob([head + "\n" + lines.join("\n")], { type: "text/csv" }),
+        );
+        toast("CSV exportado — " + samples.length + " amostras");
+      }
+      function exportJSON() {
+        const data = {
+          config: cfg,
+          events,
+          summary: {
+            apogee_m: S.maxH,
+            max_speed_ms: S.maxV,
+            max_mach: S.maxMach,
+            max_q_pa: S.maxQ,
+            duration_s: S.t,
+          },
+          samples,
+        };
+        download(
+          "pen_missao.json",
+          new Blob([JSON.stringify(data, null, 1)], {
+            type: "application/json",
+          }),
+        );
+        toast("JSON exportado");
+      }
+      function exportPNG() {
+        flightCv.toBlob((b) => {
+          download("pen_voo.png", b);
+          toast("PNG do canvas exportado");
+        });
+      }
+
+      /* ============================================================
+   12. CONTROLES — ligação ao vivo
+============================================================ */
+      function bindRange(id, out, fmt, apply) {
+        const el = $(id);
+        const upd = () => {
+          const v = parseFloat(el.value);
+          $(out).textContent = fmt(v);
+          apply(v);
+        };
+        el.addEventListener("input", upd);
+        upd();
+      }
+      function bindControls() {
+        bindRange(
+          "cThr",
+          "oThr",
+          (v) => v + "%",
+          (v) => {
+            cfg.thr = v;
+          },
+        );
+        bindRange(
+          "cF0",
+          "oF0",
+          (v) => fmtN(v) + " kg/s",
+          (v) => {
+            cfg.flows[0] = v;
+          },
+        );
+        bindRange(
+          "cF1",
+          "oF1",
+          (v) => fmtN(v) + " kg/s",
+          (v) => {
+            cfg.flows[1] = v;
+          },
+        );
+        bindRange(
+          "cF2",
+          "oF2",
+          (v) => fmtN(v) + " kg/s",
+          (v) => {
+            cfg.flows[2] = v;
+          },
+        );
+        $("cProfile").addEventListener("change", (e) => {
+          cfg.profile = e.target.value;
+          refreshFlowChart();
+        });
+        bindRange(
+          "cAmp",
+          "oAmp",
+          (v) => v + "%",
+          (v) => {
+            cfg.amp = v;
+            refreshFlowChart();
+          },
+        );
+        bindRange(
+          "cC",
+          "oC",
+          (v) => (v / 100).toFixed(2),
+          (v) => {
+            cfg.c = v / 100;
+          },
+        );
+        bindRange(
+          "cCool",
+          "oCool",
+          (v) => (v / 100).toFixed(2),
+          (v) => {
+            cfg.cool = v / 100;
+            refreshPcChart();
+          },
+        );
+        bindRange(
+          "cE",
+          "oE",
+          (v) => fmtSI(Math.pow(10, 3 + (v / 100) * 3)) + "J",
+          (v) => {
+            cfg.E = Math.pow(10, 3 + (v / 100) * 3);
+          },
+        );
+        $("cTurn").addEventListener(
+          "change",
+          (e) => (cfg.turn = e.target.checked),
+        );
+        bindRange(
+          "cPitch",
+          "oPitch",
+          (v) => v + "°",
+          (v) => {
+            cfg.pitch = v;
+          },
+        );
+        bindRange(
+          "cPay",
+          "oPay",
+          (v) => (v / 1000).toFixed(1) + " t",
+          (v) => {
+            cfg.payload = v;
+            if (phase === "idle")
+              S.mass = STAGES.reduce((a, s) => a + s.ms + s.mc, 0) + v;
+          },
+        );
+        bindRange(
+          "cCd",
+          "oCd",
+          (v) => (v / 100).toFixed(2) + "×",
+          (v) => {
+            cfg.cdScale = v / 100;
+          },
+        );
+        bindRange(
+          "cWind",
+          "oWind",
+          (v) => v + " m/s",
+          (v) => {
+            cfg.wind = v;
+          },
+        );
+        $("cDrag").addEventListener(
+          "change",
+          (e) => (cfg.drag = e.target.checked),
+        );
+        $("cBuoy").addEventListener(
+          "change",
+          (e) => (cfg.buoy = e.target.checked),
+        );
+        $("cWarp").addEventListener(
+          "change",
+          (e) => (cfg.warp = parseFloat(e.target.value)),
+        );
+        bindRange(
+          "cZoom",
+          "oZoom",
+          (v) => zoomScale().toFixed(2) + " px/m",
+          (v) => {
+            cfg.zoom = v;
+          },
+        );
+        $("cQual").addEventListener(
+          "change",
+          (e) => (cfg.qual = parseFloat(e.target.value)),
+        );
+        $("cGuides").addEventListener(
+          "change",
+          (e) => (cfg.guides = e.target.checked),
+        );
+        $("cTrail").addEventListener(
+          "change",
+          (e) => (cfg.trail = e.target.checked),
+        );
+        $("cFollow").addEventListener(
+          "change",
+          (e) => (cfg.follow = e.target.checked),
+        );
+        /* botões */
+        $("btnLaunch").addEventListener("click", launchOrPause);
+        $("btnPause").addEventListener("click", togglePause);
+        $("btnReset").addEventListener("click", () => {
+          resetSim();
+          toast("Missão reiniciada");
+        });
+        $("btnAgain").addEventListener("click", () => {
+          resetSim();
+        });
+        $("btnSound").addEventListener("click", () => {
+          Sound.resume();
+          const m = Sound.toggle();
+          toast(m ? "Som desligado" : "Som ligado");
+        });
+        $("btnRand").addEventListener("click", randomize);
+        $("btnDefaults").addEventListener("click", defaults);
+        for (const id of ["btnCsv", "btnCsv2", "btnExportEnd"])
+          $(id).addEventListener("click", exportCSV);
+        for (const id of ["btnJson", "btnJson2"])
+          $(id).addEventListener("click", exportJSON);
+        $("btnPng").addEventListener("click", exportPNG);
+        $("btnSprite").addEventListener("click", () => $("spriteFile").click());
+        $("spriteFile").addEventListener("change", (e) => {
+          if (e.target.files[0]) loadSpriteFile(e.target.files[0]);
+        });
+        $("tSearch").addEventListener("input", renderTable);
+        $("tStage").addEventListener("change", renderTable);
+        /* alcance do gráfico de gravidade */
+        $("gRange").addEventListener("click", (e) => {
+          const b = e.target.closest("button");
+          if (!b) return;
+          [...$("gRange").children].forEach((x) =>
+            x.classList.toggle("on", x === b),
+          );
+          const r = parseFloat(b.dataset.r);
+          charts.grav.opt.domain = [0, r];
+          charts.grav.opt.series[0].data = curve(grav, 0, r, 260);
+          charts.grav.draw();
+        });
+        $("rhoLog").addEventListener("click", () => {
+          charts.rho.opt.logY = true;
+          $("rhoLog").classList.add("on");
+          $("rhoLin").classList.remove("on");
+          charts.rho.draw();
+        });
+        $("rhoLin").addEventListener("click", () => {
+          charts.rho.opt.logY = false;
+          $("rhoLin").classList.add("on");
+          $("rhoLog").classList.remove("on");
+          charts.rho.draw();
+        });
+        /* drag & drop de sprite */
+        const fw = $("flightwrap");
+        fw.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          fw.style.outline = "2px dashed #22d3ee";
+        });
+        fw.addEventListener("dragleave", () => (fw.style.outline = "none"));
+        fw.addEventListener("drop", (e) => {
+          e.preventDefault();
+          fw.style.outline = "none";
+          const f = e.dataTransfer.files[0];
+          if (f && f.type.startsWith("image")) loadSpriteFile(f);
+        });
+        /* câmera: arrastar para olhar, roda para zoom */
+        let dragCam = null;
+        flightCv.addEventListener("pointerdown", (e) => {
+          dragCam = { x: e.clientX, y: e.clientY, h: cam.h, cx: cam.x };
+          flightCv.setPointerCapture(e.pointerId);
+        });
+        flightCv.addEventListener("pointermove", (e) => {
+          if (!dragCam) return;
+          cam.x = dragCam.cx - (e.clientX - dragCam.x) / cam.scale;
+          cam.h = dragCam.h + (e.clientY - dragCam.y) / cam.scale;
+        });
+        flightCv.addEventListener("pointerup", () => (dragCam = null));
+        flightCv.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            cfg.zoom = clamp(cfg.zoom - Math.sign(e.deltaY) * 6, 0, 100);
+            $("cZoom").value = cfg.zoom;
+            $("oZoom").textContent = zoomScale().toFixed(2) + " px/m";
+          },
+          { passive: false },
+        );
+        /* teclado */
+        window.addEventListener("keydown", (e) => {
+          if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")
+            return;
+          if (e.code === "Space") {
+            e.preventDefault();
+            launchOrPause();
+          } else if (e.key === "r" || e.key === "R") resetSim();
+          else if (e.key === "m" || e.key === "M") {
+            Sound.resume();
+            Sound.toggle();
+          } else if (e.key >= "1" && e.key <= "7")
+            switchTab(
+              [
+                "lancamento",
+                "gravidade",
+                "temperatura",
+                "densidade",
+                "aerodinamica",
+                "propulsao",
+                "telemetria",
+              ][+e.key - 1],
+            );
+        });
+      }
+      function setCtl(id, v) {
+        const el = $(id);
+        el.value = v;
+        el.dispatchEvent(new Event("input"));
+        el.dispatchEvent(new Event("change"));
+      }
+      function randomize() {
+        setCtl(
+          "cF0",
+          Math.round((14000 * (0.7 + Math.random() * 0.6)) / 100) * 100,
+        );
+        setCtl(
+          "cF1",
+          Math.round((1000 * (0.6 + Math.random() * 0.9)) / 25) * 25,
+        );
+        setCtl(
+          "cF2",
+          Math.round((600 * (0.6 + Math.random() * 0.9)) / 10) * 10,
+        );
+        const profs = ["const", "up", "down", "pulse", "step"];
+        $("cProfile").value = profs[Math.floor(Math.random() * profs.length)];
+        $("cProfile").dispatchEvent(new Event("change"));
+        setCtl("cAmp", Math.round(Math.random() * 70));
+        setCtl("cE", Math.round(30 + Math.random() * 60));
+        setCtl("cPitch", Math.round(Math.random() * 50));
+        $("cTurn").checked = Math.random() < 0.6;
+        $("cTurn").dispatchEvent(new Event("change"));
+        setCtl("cWind", Math.round((Math.random() - 0.5) * 50));
+        toast("🎲 Parâmetros aleatórios aplicados");
+      }
+      function defaults() {
+        setCtl("cThr", 100);
+        setCtl("cF0", 14000);
+        setCtl("cF1", 1000);
+        setCtl("cF2", 600);
+        $("cProfile").value = "const";
+        $("cProfile").dispatchEvent(new Event("change"));
+        setCtl("cAmp", 35);
+        setCtl("cC", 100);
+        setCtl("cCool", 5);
+        setCtl("cE", 50);
+        $("cTurn").checked = false;
+        $("cTurn").dispatchEvent(new Event("change"));
+        setCtl("cPitch", 0);
+        setCtl("cPay", 0);
+        setCtl("cCd", 100);
+        setCtl("cWind", 0);
+        $("cDrag").checked = true;
+        $("cDrag").dispatchEvent(new Event("change"));
+        $("cBuoy").checked = true;
+        $("cBuoy").dispatchEvent(new Event("change"));
+        $("cWarp").value = "1";
+        $("cWarp").dispatchEvent(new Event("change"));
+        setCtl("cZoom", 55);
+        toast("♻ Valores padrão do notebook restaurados");
+      }
+      function launchOrPause() {
+        Sound.resume();
+        if (phase === "idle") {
+          phase = "countdown";
+          countdownT = 3;
+          $("countdown").style.display = "grid";
+          $("btnLaunch").disabled = true;
+          setStatus("CONTAGEM", "warn");
+          Sound.beep(660, 0.12);
+        } else if (phase === "flight") togglePause();
+      }
+      function togglePause() {
+        if (phase !== "flight") return;
+        paused = !paused;
+        $("btnPause").textContent = paused ? "▶" : "⏸";
+        setStatus(
+          paused ? "PAUSADO" : "ESTÁGIO " + (Math.min(S.stage, 2) + 1),
+          paused ? "warn" : "fly",
+        );
+        Sound.beep(paused ? 440 : 720, 0.08);
+      }
+
+      /* ============================================================
+   13. ABAS
+============================================================ */
+      let activeTab = "lancamento";
+      function switchTab(name) {
+        activeTab = name;
+        document
+          .querySelectorAll(".tabs button")
+          .forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
+        document
+          .querySelectorAll(".tab")
+          .forEach((t) => t.classList.toggle("active", t.id === "tab-" + name));
+        requestAnimationFrame(() => {
+          for (const k in charts) charts[k].resize();
+          resizeFlight();
+          if (name === "temperatura") {
+            drawColumn("colTemp", "temp");
+          }
+          if (name === "densidade") {
+            drawColumn("colRho", "rho");
+          }
+          if (name === "telemetria") renderTable();
+          if (name === "propulsao") {
+            refreshFlowChart();
+            refreshPcChart();
+          }
+        });
+      }
+      $("tabs").addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (b) switchTab(b.dataset.tab);
+      });
+
+      /* ============================================================
+   14. LOOP PRINCIPAL
+============================================================ */
+      let lastT = performance.now(),
+        hudTimer = 0,
+        chartTimer = 0,
+        colTimer = 0;
+      function loop(now) {
+        const dtReal = Math.min(0.1, (now - lastT) / 1000);
+        lastT = now;
+        if (phase === "countdown") {
+          const prev = Math.ceil(countdownT);
+          countdownT -= dtReal;
+          $("countdown").textContent = Math.max(1, Math.ceil(countdownT));
+          if (Math.ceil(countdownT) !== prev && countdownT > 0)
+            Sound.beep(660, 0.12);
+          if (countdownT <= 0) {
+            phase = "flight";
+            $("countdown").style.display = "none";
+            $("btnPause").disabled = false;
+            $("btnLaunch").textContent = "⏸ PAUSAR";
+            $("btnLaunch").disabled = false;
+            setStatus("ESTÁGIO 1", "fly");
+            logEvent(
+              "Ignição — " + fmtN(cfg.flows[0]) + " kg/s",
+              "#ff7a1c",
+              180,
+            );
+            Sound.beep(140, 0.5, "sawtooth", 0.3);
+          }
+        }
+        if (phase === "flight" && !paused) {
+          simAcc += dtReal * cfg.warp;
+          const dt = 1 / 60;
+          let n = 0;
+          while (simAcc >= dt && n < 40 && phase === "flight") {
+            step(dt);
+            simAcc -= dt;
+            n++;
+          }
+          if (n >= 40) simAcc = 0;
+          updateParticles(dtReal * cfg.warp);
+          Sound.engine(
+            S.vm > 0
+              ? clamp(S.vm / (cfg.flows[Math.min(S.stage, 2)] || 1), 0, 1)
+              : 0,
+            rho(S.h),
+          );
+        } else {
+          Sound.engine(0, 0);
+          updateParticles(dtReal);
+        }
+        if (activeTab === "lancamento") drawFlight(now, dtReal);
+        hudTimer += dtReal;
+        if (hudTimer > 0.12) {
+          hudTimer = 0;
+          updateHUD();
+        }
+        chartTimer += dtReal;
+        if (chartTimer > 0.35) {
+          chartTimer = 0;
+          if (phase !== "idle") {
+            refreshLiveCharts();
+            if (activeTab === "gravidade") charts.grav.draw();
+            if (activeTab === "temperatura") charts.temp.draw();
+            if (activeTab === "densidade") {
+              charts.rho.draw();
+              charts.pres.draw();
+            }
+            if (activeTab === "aerodinamica") {
+              charts.cd.draw();
+              charts.vs.draw();
+            }
+            if (activeTab === "propulsao") charts.flow.draw();
+          }
+          if (activeTab === "telemetria") renderTable();
+        }
+        colTimer += dtReal;
+        if (colTimer > 0.5) {
+          colTimer = 0;
+          if (activeTab === "temperatura") drawColumn("colTemp", "temp");
+          if (activeTab === "densidade") drawColumn("colRho", "rho");
+        }
+        requestAnimationFrame(loop);
+      }
+
+      /* ============================================================
+   15. BOOT
+============================================================ */
+      buildStats();
+      buildStaticTables();
+      resetSim();
+      buildCharts();
+      bindControls();
+      resizeFlight();
+      setSprite(proceduralSprite(), "procedural");
+      loadSpriteFromURL("/sprite?" + Date.now());
+      updateHUD();
+      requestAnimationFrame(loop);
+    </script>
+  </body>
+</html>
