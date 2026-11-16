@@ -177,7 +177,7 @@ Para a parte da expansão, os gases saem da câmara de combustão e expandem den
   \label{eq:emp_mot}
 \end{equation}
 
-A variável \(c\) seria uma variável de correção do angulo da chama, mas, por falta de tempo, acabou não sendo utilizada.
+A variável \(c\) seria uma variável de correção do angulo da chama, mas, por falta de tempo, acabou não sendo utilizada \cite{NASA_RocketThrustEquation}.
 
 Por fim, a nave pode ser simplificada para um cilindro se deslocando em relação a partículas estáticas na atmosfera. A cada colisão, a nave transfere uma quantidade de momento \(dQ\) para a partícula, fazendo elas variarem uma quantidade . Então, em um tempo \(dt\) a nave varre um volume \(dV = A v dt\), o que faz ela colidir com \(dm_t = \rho(h)dV=\rho(h)A v dt\). Isso causa uma variação \(\Delta u\) na velocidade das partículas, o que resulta em \(F=\rho(h)A v \Delta u\). Agora, suponha que esse \(\Delta u = \alpha v\) e que \(\alpha\) pode ser escrito como \(\frac{C_D}{2}\). Isso resulta na Equação~\eqref{eq:arras}.
 
@@ -186,95 +186,91 @@ Por fim, a nave pode ser simplificada para um cilindro se deslocando em relaçã
   \label{eq:arras}
 \end{equation}
 
-Defina as variáveis, parâmetros, condições iniciais ou de contorno e apresente o modelo matemático, como o apresentado na Equação~\eqref{eq:pvi}
-\begin{equation}
-\frac{dy}{dt}=f(t,y), \qquad y(t_0)=y_0.
-\label{eq:pvi}
-\end{equation}
-
-Empuxo de arquimedes:
-
-\[E_y=\rho(h)g(h)v\]
-
-- \(\rho\): Densidade da camada atual
-
-- \(g\): gravidade na camada atual
-
-- \(v\): volume do foguete
-
-Arrasto da nave:
-
-\[F_D=-\frac{1}{2}C_D\rho(h)A|v|\vec{v}\]
-
-- \(C_D\): Coeficiente de arrasto
-
-- \(\rho\): Densidade da camada atual
-
-- \(A\): Área efetiva do foguete
-
-- \(v\): Velocidade do foguete
-
-Empuxo do motor:
-
-\[T= c( \dot{m} \mu_e + (P_e-P_a)A_e)\]
-
-- \(c\): Coeficiente de correção do bocal
-
-- \(\dot{m}\): Vazão de massa do bocal
-
-- \(\mu_e\): Velocidade relativa dos gases na saída
-
-- \(P_e\): Pressão de exaustão
-
-- \(P_a\): Pressão atmosférica de saída
-
-- \(A_e\): Área do bucal
-
-As equações quando são acompanhadas de uma numeração, devem ser referenciadas em maiúsculo, isto é, deve-se utilizar Equação~\eqref{eq:pvi} ao invés de equação~\eqref{eq:pvi}. O mesmo vale para teoremas, proposições, lemas, corolários, definições, figuras e tabelas.
 
 
 \subsection{Método de solução}
-Descreva o método analítico ou numérico empregado. Quando pertinente, apresente algoritmo, discretização, critérios de erro e demais questões que sejam relevantes para o trabalho.
+
+Para chegarmos no resultado utilizado, imagine uma função \(f(t)\) conhecida nos instantes \(t_n\) e \(t_{n+1}\). O objetivo é encontrar uma aproximação para a sua derivada, caso expanda-se a série de Taylor em torno de \(t_n\), obtém-se a Equação~\eqref{eq:taylor}.
+
+\begin{equation}
+  f_{n+1} = f_n + f'_n\Delta t + \frac{f''_n}{2}\Delta t^2 +O(\Delta t^3)
+  \label{eq:taylor}
+\end{equation}
+
+Com isso, chega-se facilmente as diferenças finitas da Equação~\eqref{eq:dif_fin}
+
+\begin{equation}
+  \frac{f_{n+1}-f_n }{\Delta t} = f'_n+ \frac{f''_n}{2}\Delta t +O(\Delta t^2)
+  \label{eq:dif_fin}
+\end{equation}
+
+Contudo, pode-se expandir \(f'\) pelo mesmo argumento, o que resulta em outra equação na forma de \(f''_n =\frac{f'_{n+1}-f_n}{\Delta t}-O(\Delta t)\). Isso pode ser substituído na Equação~\eqref{eq:dif_fin}, obtendo a Equação~\eqref{eq:aprox_trap}.
+
+\begin{equation}
+  \frac{f_{n+1}-f_n }{\Delta t} = \frac{f'_{n+1}+f'_{n}}{2}+O(\Delta t^2)
+  \label{eq:aprox_trap}
+\end{equation}
+
+Se o erro de truncamento for desprezado, obtém-se a Equação~\eqref{eq:trap}.
+
+
+\begin{equation}
+  f_{n+1} \approx f_n+\frac{\Delta t}{2}(f'_{n+1}+f'_{n})
+  \label{eq:trap}
+\end{equation}
+
+A equação demonstrada também é chamada de "Método do Trapézio", e permite chegar nas soluções iterativas tanto para a posição quanto para a velocidade com o mesmo erro de uma diferença finita progressiva comum. Assim, chega-se nas fórmulas \eqref{eq:vel_iter}, \eqref{eq:pos_iter} e \eqref{eq:mas_iter}. 
+
+\begin{align}
+  v_{n+1} = v_n+\frac{\Delta t}{2}(a_{n+1}+a_{n}) \label{eq:vel_iter}\\
+  r_{n+1} = r_n+\frac{\Delta t}{2}(v_{n+1}+v_{n}) \label{eq:pos_iter} \\
+  m_{n+1} = m_n+\frac{\Delta t}{2}(\dot{m}_{n+1}+\dot{m}_{n})
+  \label{eq:mas_iter}
+\end{align}
+
+Isso foi incorporado em um sistema vetorial que, posteriormente, pode ser transformado em uma simulação visual do foguete. A simulação tem como propósito não só visualizar a trajetória da nave, mas acompanhar diversos valores que a nave experiencia, como arrasto e temperatura da camada, e avaliar como mudar diferentes variáveis afetam o foguete.
 
 \section{Discussão dos resultados}
-Apresente os resultados obtidos e discuta seu significado. Figuras e tabelas devem ser numeradas, possuir legenda e ser mencionadas no texto. Não se esqueçam que ao final da legenda sempre deve aparecer a fonte da figura, como pode ser visto na Figura~\eqref{fig:exemplo}.
 
-Mantendo a vazão em $14000$ por todo o percurso nos leva até 344 km acima da superfície. 
-Contudo, a saturno usou vazões distintas, então, copiando ele, temos $14000$ no primeiro estágio, $1000$ no segundo e 600 no terceiro (os gráficos ficam bem bonitos), dai, com isso, chegamos em 3000 km
+A atmosfera obteve uma boa aproximação em relaçao a temperatura e a densidade, obtendo-se um valor extremamente proximo em alturas como 11 km e 86 km, usando os dados de \cite{LBL_StandardAtmosphere}. Além disso, o formato resultante dos gráficos, visualizados em \ref{fig:graf_atmo}.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\linewidth]{Figures/t26.jpg}
-    \caption{Turma 26 - Ilum Escola de Ciência. Fonte: Documentos oficiais da Ilum \url{https://ilum.cnpem.br/noticias_e_eventos/}}
-    \label{fig:exemplo}
+\begin{figure}[H] 
+  \centering 
+  \begin{subfigure}{0.45\linewidth} 
+    \centering 
+    \includegraphics[width=\linewidth]{Figures/Grafico_temperatura_X_altura.png} 
+    \caption{Imagem 1} 
+    \label{fig:t26} 
+  \end{subfigure} 
+  \hfill 
+  \begin{subfigure}{0.45\linewidth} 
+    \centering 
+    \includegraphics[width=\linewidth]{Figures/Grafico_densidade_X_altura.png} 
+    \caption{Imagem 2} 
+    \label{fig:img2} 
+  \end{subfigure} 
+  \caption{Gráficos resultantes da simulação atmosférica da densidade e temperatura, evidenciando o comportamento único em cada camada da temperatura e os diferentes decaimentos da densidade a depender da camada. Fonte: Elaborado pelo grupo.} \label{fig:graf_atmo} 
 \end{figure}
 
+O foguete apresentou um arrasto característico inicial, com aceleração lenta no momento de lançamento e uma mais expressiva em camadas superiores da atmosfera, devido a atenuação da resistência do ar e a diminuição da força gravitacional. Contudo, mesmo que coerente com a realidade, ainda é necessário realizar a modelagem da dispersão do bocal para garantir que o resultado continua coerente. 
 
+A temperatura na câmara de combustão parecia estável entre o ponto de motos desligado, a qual ficava a temperatura ambiente e um limiar definido pelo limite de expansão do gás. Entretanto, não foi possível conferir o resultado da pressão no exaustor, já que ele funcionava numericamente, mas apresentava inconsistências que impediam uma interpretação física robusta.
 
-Compare os resultados com a teoria, discuta limitações, comportamento do modelo, interpretações, erros de aproximação e demais informações relevantes para o trabalhos. Se for o caso, utilizem tabelas para auxiliar na organização da informação, como o modelo apresentado na Tabela~\ref{tab:exemplo}.
+O foguete atingiu 4000 km de altitude em uma ascensão linear no momento em que seu combustível se esgotou, mas conseguiu chegar em 380.000 km (próximo da região de gravidade 0) se deixado em inércia indefinida, atingindo a lua. Entretanto, não foi testado a abordagem de utilizar estilingues gravitacionais e nem de preservar a força G da nave em abaixo de 4G, que seria o limiar saudável para os pilotos. 
 
-\begin{table}[H]
-\centering
-\caption{Exemplo de tabela.}
-\label{tab:exemplo}
-\begin{tabular}{lcc}
-\toprule
-Método & Erro & Tempo \\
-\midrule
-Método A & 0,00 & 0,00 \\
-Método B & 0,00 & 0,00 \\
-\bottomrule
-\end{tabular}
-\end{table}
+Mesmo que no limite, a simulação só cessou no ponto de 380.000 km por problemas computacionais, já que o programa trava nesse ponto. Contudo, a nave ainda tinha 20.000 \(\frac{m}{s}\) de velocidade no termino, significando que era necessário muito menos combustível para atingir o objetivo, resultando em uma sobra para conseguir retornar a terra posteriormente.
 
 \section{Considerações finais}
-% Retome o objetivo do trabalho e apresente as principais conclusões. Destaque o que foi aprendido sobre o problema e sobre o uso de equações diferenciais na aplicação estudada. Não introduza resultados novos nesta seção. Perspectivas futuras são bem vindas, mas não obrigatórias.
+
+Como um projeto que visava simular lançamento de foguetes e modelar condições para tal, ele foi um sucesso em sua proposta. A modelagem já apresenta uma fração da dificuldade de descobrir rotas de cada foguete, já que mudanças mínimas podem alterar o resultado final enormemente (característicos de problemas complexos).
+
+A simulação apresentada é uma forma visual de estudar como todas as equações desenvolvidas interagem em um grande sistema e atingiu o objetivo de levar a nave saturno V até a lua (como na missão original). Mesmo que não foram testadas, outras condições poderiam chegar com muito mais combustível até o objetivo final.
 
 \section{Contribuição de cada autor}
 % Descreva objetivamente a participação de cada integrante. A descrição deve permitir identificar a contribuição individual de cada autor, incluindo, conforme o caso, revisão bibliográfica, formulação matemática, implementação computacional, análise dos resultados, produção de figuras e tabelas, redação e revisão do texto. \textbf{Utilizem essas informações para definir a ordem de autoria do trabalho}, isto é, a ordem deve ser da pessoa que mais contribuiu para aquela que menos contribuiu.
 
 \begin{itemize}[leftmargin=*]
-    \item Nome do Autor 1: descreva a contribuição.
+    \item Vinícius Marianno De Marque Cutolo: descreva a contribuição.
     \item Nome do Autor 2: descreva a contribuição.
     \item Nome do Autor 3: descreva a contribuição.
 \end{itemize}

@@ -372,3 +372,6 @@ htmlcov/
 .env
 .env.*
 !.env.example
+
+Simulação/media
+Vídeo
