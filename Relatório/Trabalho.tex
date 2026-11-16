@@ -60,10 +60,10 @@
 \fi
 
 \begin{resumo}
-Apresente aqui, em aproximadamente 100--200 palavras, o problema estudado, o objetivo do trabalho, a metodologia utilizada, os principais resultados e a principal conclusão. Evite citações, equações longas e informações que não sejam retomadas no texto.
+O trabalho a seguir busca simular um lançamento de um foguete por meio de modelagem matemática simplificada das condições que afetam esse voo e da própria dinâmica do foguete. Para isso, o grupo demonstrou várias EDOs e usou um método iterativo para obter a trajetória e outros dados do foguete. Tudo isso foi compilado em uma simulação visual que buscava representar todos os processos que ocorriam e manipular as variáveis do foguete para testar diferentes combinações durante o voo.
 \end{resumo}
 
-\noindent\textbf{Palavras-chave:} equações diferenciais; modelagem matemática; aplicações; simulação física; aeroespacial.
+\noindent\textbf{Palavras-chave:} equações diferenciais; modelagem matemática; aeroespacial; simulação física.
 
 \section{Introdução}
 Durante a Corrida Espacial, na segunda metade do século XX, a disputa entre os Estados Unidos e a antiga União Soviética gerou grandes avanços na tecnológica espacial. Um grande marco na história desse período, é o programa Apollo realizado pela NASA, que tinha como objetivo levar seres humanos à Lua e retorna-los em segurança à Terra. Nas missões Apollo 8 a 17, foi utilizado o foguete Saturno V~\cite{nasa_saturnv_1969}, para o transporte dos astronautas ao espaço. Entretanto, a realização dessas missões envolvia diversos desafios físicos e tecnológicos, especialmente durante o lançamento do foguete.
@@ -71,7 +71,12 @@ Durante a Corrida Espacial, na segunda metade do século XX, a disputa entre os 
 O desafio entorno da trajetória de um foguete se é influenciada pela gravidade, resistência do ar e empuxo dos motores, além da variação de massa decorrente do consumo de propelente e da separação dos estágios. Nesse contexto, este trabalho busca desenvolver um modelo matemático simplificado de lançamento do Saturn V, considerando a variação das propriedades atmosféricas com a altitude e as diferentes fases de propulsão. Para isso, serão utilizadas aproximações por partes para as condições atmosféricas e para o funcionamento dos motores, com base nas informações técnicas do Saturn V~\cite{nasa_saturnv_1969} e em modelos de referência da atmosfera terrestre~\cite{USStandardAtmosphere1976}.
 
 \section{Fundamentação teórica}
-% Apresente os conceitos matemáticos necessários para compreender o trabalho. Inclua as equações diferenciais utilizadas, hipóteses, definições, resultados teóricos, métodos analíticos e/ou numéricos e referências bibliográficas pertinentes. Toda afirmação ou resultado obtido de uma fonte externa deve ser devidamente referenciado, por exemplo~\cite{exemplo-livro}.
+
+Para a realização desse trabalho, será necessário simplificar alguns conceitos. Em primeiro lugar, será considerara uma terra perfeitamente esférica, para que a gravidade seja denotada como uma função só dependente do raio. Ademais, será definido como o referencial do sistema o chão terrestre tanto como um plano espacial quanto como o de velocidade (para que a rotação terrestre possa ser desprezada). A gravidade resultante será unicamente consequência da atração terrestre, desprezando interações com outros corpos celestes.  
+
+Além disso, a atmosfera nesse trabalho será estratificada em camadas bem segmentadas e estacionária, evitando interseção entre elas e com convecção e facilitando em determinar uma densidade unidimensional. Como a atmosfera é estacionaria, o arrasto so depende da velocidade relativa da nave, desprezando forças de Bernoulli de fluxo e outras variações fluídicas do ar.
+
+Por fim, a nave será separada em tr~es estágios com variáveis distintas. O motor do foguete não tem preocupação com o fluxo de calor e foi simplificado para uma maquina que tem suas variáveis somente dependente da vazão de gasolina e de constantes externas.
 
 \subsection{Formulação matemática}
 
@@ -80,14 +85,14 @@ O desafio entorno da trajetória de um foguete se é influenciada pela gravidade
 Pela lei da gravitação universal de Newton, a gravidade é modelada como \eqref{eq:grav_newton}.
 
 \begin{equation}
-  g(h)=\frac{G M}{r^2}
+  g(r)=\frac{G M}{r^2}
   \label{eq:grav_newton}
 \end{equation}
 
 Como a variável principal desse trabalho (a altura h) é em relação a superfície, a gravidade será convertida para a um equivalente, como na Equação~\eqref{eq:grav_red}.
 
 \begin{equation}
-  g(h)=\frac{G M}{(R+r)^2}
+  g(h)=\frac{G M}{(R+h)^2}
   \label{eq:grav_red}
 \end{equation}
 
@@ -100,7 +105,7 @@ Isso significa que a gravidade na superfície é dada por \(h=0\), o que resulta
 
 \subsubsection{Temperatura}
 
-Segunda a atmosfera padrão \cite{LBL_StandardAtmosphere}, a atmosfera pode ser separada em camadas com regimes próprios de temperatura. Segundo ela, cada uma dessas estratificações segue o modelo linear proposto em \eqref{eq:temp_lin}.
+Segunda a Lawrence Berkeley National Laboratory \cite{LBL_StandardAtmosphere}, a atmosfera pode ser separada em camadas com regimes próprios de temperatura. De acordo com a instituição, cada uma dessas estratificações segue o modelo linear proposto em \eqref{eq:temp_lin}.
 
 \begin{equation}
   T(h) = C + \beta(h-h')
@@ -161,9 +166,9 @@ Para definir a constante \(K_0\), tomou-se como sabida a densidade a nível do m
 
 \subsubsection{Forças sobre a nave}
 
-No total, quatro forças foram consideradas: peso, empuxo de Arquimedes, empuxo do motor e resistência do ar. A força peso saí instantaneamente ao aplicar a gravidade na massa, por isso, não é necessária de se desenvolver. O empuxo de Arquimedes, durante os testes, se mostrou desprezível perante as outras forças, por isso, não será muito comentado também, sua formula é resultado da pressão exercendo força contra o espaço delimitado por um objeto, sendo representada como \(E_y=\rho(h)g(h)v\).
+No total, quatro forças foram consideradas: peso, empuxo de Arquimedes, empuxo do motor e resistência do ar. A força peso saí instantaneamente ao aplicar a gravidade na massa, por isso, não é necessária de se desenvolver. O empuxo de Arquimedes, durante os testes, se mostrou desprezível perante as outras forças, por isso, não será muito comentado também, sua formula é resultado da pressão exercendo força contra o espaço delimitado por um objeto, sendo representada como \(E_y=\rho(h)g(h)V\).
 
-O empuxo do motor da nave é composto por duas partes: o momento ganho pela ejeção de combustível e o momento ganho pela expansão dele. Quando se queima o propulsor, ele é liberado como uma massa \(dm\) a uma velocidade \(\mu_e\) para baixo, isso resulta em um ganho instantâneo para a nave de \(dm\mu_e\). Com isso, \(dQ=dm\mu_e\). Diferenciando ambas as partes no tempo, a Equação~\eqref{eq:combus} é obtida.
+O empuxo do motor da nave é composto por duas partes: o momento ganho pela ejeção de combustível e o momento ganho pela expansão dele. Quando se queima o propulsor, ele é liberado como uma massa \(dm\) a uma velocidade \(\mu_e\) para baixo, isso resulta em um ganho instantâneo para a nave de \(dm\mu_e\). Com isso, \(dQ=dm\mu_e\). Diferenciando ambas as partes no tempo, a Equação~\eqref{eq:combus} é obtida \cite{NASAIdealRocketEquation}.
 
 \begin{equation}
   F_e = \dot{m}\mu_e
@@ -179,14 +184,22 @@ Para a parte da expansão, os gases saem da câmara de combustão e expandem den
 
 A variável \(c\) seria uma variável de correção do angulo da chama, mas, por falta de tempo, acabou não sendo utilizada \cite{NASA_RocketThrustEquation}.
 
-Por fim, a nave pode ser simplificada para um cilindro se deslocando em relação a partículas estáticas na atmosfera. A cada colisão, a nave transfere uma quantidade de momento \(dQ\) para a partícula, fazendo elas variarem uma quantidade . Então, em um tempo \(dt\) a nave varre um volume \(dV = A v dt\), o que faz ela colidir com \(dm_t = \rho(h)dV=\rho(h)A v dt\). Isso causa uma variação \(\Delta u\) na velocidade das partículas, o que resulta em \(F=\rho(h)A v \Delta u\). Agora, suponha que esse \(\Delta u = \alpha v\) e que \(\alpha\) pode ser escrito como \(\frac{C_D}{2}\). Isso resulta na Equação~\eqref{eq:arras}.
+Por fim, a nave pode ser simplificada para um cilindro se deslocando em relação a partículas estáticas na atmosfera. A cada colisão, a nave transfere uma quantidade de momento \(dQ\) para a partícula, fazendo elas variarem uma quantidade . Então, em um tempo \(dt\) a nave varre um volume \(dV = A v dt\), o que faz ela colidir com \(dm_t = \rho(h)dV=\rho(h)A v dt\). Isso causa uma variação \(\Delta u\) na velocidade das partículas, o que resulta em \(F=\rho(h)A v \Delta u\). Agora, suponha que esse \(\Delta u = \alpha v\) e que \(\alpha\) pode ser escrito como \(\frac{C_D}{2}\) \cite{NASADragEquation}. Isso resulta na Equação~\eqref{eq:arras}.
 
 \begin{equation}
   F_D = \frac{1}{2}C_D \rho(h)A v^2
   \label{eq:arras}
 \end{equation}
 
+Com tudo isso, a equação final para aceleração do foguete pode ser escrita a partir da segunda lei de Newton na forma \eqref{eq:accel}, \eqref{eq:pos} e \eqref{eq:mass}.
 
+\begin{center}
+  \begin{align}
+    \dot{v} = \frac{\frac{1}{2}C_D \rho(h)A v^2+c(\dot{m}\mu_e+(P_e-P_a)A_b)+\rho(h)g(h)V+g(h)m_t}{m_t}\label{eq:accel} \\
+    \dot{r}=v\label{eq:pos} \\
+    \dot{m}=-\dot{m}_e\label{eq:mass}
+  \end{align}
+\end{center}
 
 \subsection{Método de solução}
 
@@ -204,7 +217,7 @@ Com isso, chega-se facilmente as diferenças finitas da Equação~\eqref{eq:dif_
   \label{eq:dif_fin}
 \end{equation}
 
-Contudo, pode-se expandir \(f'\) pelo mesmo argumento, o que resulta em outra equação na forma de \(f''_n =\frac{f'_{n+1}-f_n}{\Delta t}-O(\Delta t)\). Isso pode ser substituído na Equação~\eqref{eq:dif_fin}, obtendo a Equação~\eqref{eq:aprox_trap}.
+Contudo, pode-se expandir \(f'\) pelo mesmo argumento, o que resulta em outra equação na forma de \(f''_n =\frac{f'_{n+1}-f'_n}{\Delta t}-O(\Delta t)\). Isso pode ser substituído na Equação~\eqref{eq:dif_fin}, obtendo a Equação~\eqref{eq:aprox_trap}.
 
 \begin{equation}
   \frac{f_{n+1}-f_n }{\Delta t} = \frac{f'_{n+1}+f'_{n}}{2}+O(\Delta t^2)
@@ -219,12 +232,12 @@ Se o erro de truncamento for desprezado, obtém-se a Equação~\eqref{eq:trap}.
   \label{eq:trap}
 \end{equation}
 
-A equação demonstrada também é chamada de "Método do Trapézio", e permite chegar nas soluções iterativas tanto para a posição quanto para a velocidade com o mesmo erro de uma diferença finita progressiva comum. Assim, chega-se nas fórmulas \eqref{eq:vel_iter}, \eqref{eq:pos_iter} e \eqref{eq:mas_iter}. 
+A equação demonstrada também é chamada de "Método Trapezoidal", e permite chegar nas soluções iterativas tanto para a posição quanto para a velocidade com uma precisão global de segunda ordem. Assim, chega-se nas fórmulas \eqref{eq:vel_iter}, \eqref{eq:pos_iter} e \eqref{eq:mas_iter}. 
 
 \begin{align}
   v_{n+1} = v_n+\frac{\Delta t}{2}(a_{n+1}+a_{n}) \label{eq:vel_iter}\\
   r_{n+1} = r_n+\frac{\Delta t}{2}(v_{n+1}+v_{n}) \label{eq:pos_iter} \\
-  m_{n+1} = m_n+\frac{\Delta t}{2}(\dot{m}_{n+1}+\dot{m}_{n})
+  m_{n+1} = m_n-\frac{\Delta t}{2}(\dot{m}_{n+1}+\dot{m}_{n})
   \label{eq:mas_iter}
 \end{align}
 
@@ -245,7 +258,68 @@ O resultado da gravidade foi coerente ao longo da simulação e da realidade, ve
   
 \end{figure}
 
-A atmosfera obteve uma boa aproximação em relação a temperatura e a densidade, obtendo-se um valor extremamente próximo em alturas como 11 km e 86 km, usando os dados de \cite{LBL_StandardAtmosphere}. Além disso, o formato resultante dos gráficos, visualizados em \ref{fig:graf_atmo}.
+A atmosfera obteve uma boa aproximação em relação a temperatura e a densidade, como visto nas tabelas \ref{tab:validacao_densidade} e \ref{tab:validacao_temperatura}, obtendo-se um valor extremamente proximo em alturas como 11 km e 86 km, usando os dados de \cite{LBL_StandardAtmosphere}. Além disso, o formato resultante dos gráficos, visualizados em \ref{fig:graf_atmo}.
+
+
+
+\begin{table}[htbp]
+    \centering
+    \caption{Comparação entre a densidade calculada pelo modelo e os valores da atmosfera padrão de 1976.}
+    \label{tab:validacao_densidade}
+    \small
+    \begin{tabular}{c|c|c|c}
+        \hline
+        \textbf{Altitude (km)} &
+        \textbf{Modelo (kg/m$^3$)} &
+        \textbf{Referência (kg/m$^3$)} &
+        \textbf{Erro relativo (\%)} \\
+        \hline
+        0  & 1,225000   & 1,225000   &  0,000 \\
+        11 & 0,364916   & 0,364801   & +0,031 \\
+        20 & 0,088889   & 0,088910   & -0,023 \\
+        32 & 0,0135548  & 0,0135551  & -0,002 \\
+        47 & 0,0015005  & 0,0014965  & +0,268 \\
+        51 & 0,00091266 & 0,00090690 & +0,635 \\
+        71 & 0,00007178 & 0,00007196 & -0,255 \\
+        86 & 0,000006788 & 0,000006958 & -2,442 \\
+        \hline
+    \end{tabular}
+
+    \vspace{0.15cm}
+    \footnotesize
+    Fonte: Elaborado pelo grupo, com dados de
+    \cite{USStandardAtmosphere1976}.
+\end{table}
+
+
+\begin{table}[htbp]
+    \centering
+    \caption{Comparação entre a temperatura calculada pelo modelo e os valores da atmosfera padrão de 1976.}
+    \label{tab:validacao_temperatura}
+    \small
+    \begin{tabular}{c|c|c|c}
+        \hline
+        \textbf{Altitude (km)} &
+        \textbf{Modelo (K)} &
+        \textbf{Referência (K)} &
+        \textbf{Diferença (K)} \\
+        \hline
+        0  & 288,15 & 288,15 &  0,00 \\
+        11 & 216,65 & 216,77 & -0,12 \\
+        20 & 216,65 & 216,65 &  0,00 \\
+        32 & 228,65 & 228,49 & +0,16 \\
+        47 & 270,65 & 269,68 & +0,97 \\
+        51 & 270,65 & 270,65 &  0,00 \\
+        71 & 214,65 & 216,85 & -2,20 \\
+        86 & 184,65 & 186,95 & -2,30 \\
+        \hline
+    \end{tabular}
+
+    \vspace{0.15cm}
+    \footnotesize
+    Fonte: Elaborado pelo grupo, com dados de
+    \cite{USStandardAtmosphere1976}.
+\end{table}
 
 \begin{figure}[H] 
   \centering 
@@ -267,9 +341,9 @@ O foguete apresentou um arrasto característico inicial, com aceleração lenta 
 
 A temperatura na câmara de combustão parecia estável entre o ponto de motor desligado, a qual ficava a temperatura ambiente e um limiar definido pelo limite de expansão do gás. Entretanto, não foi possível conferir o resultado da pressão no exaustor, já que ele funcionava numericamente, mas apresentava inconsistências que impediam uma interpretação física robusta.
 
-O foguete atingiu 4000 km de altitude em uma ascensão linear no momento em que seu combustível se esgotou, mas conseguiu chegar em 380.000 km (próximo da região de gravidade 0) se deixado em inércia indefinida, atingindo a lua. Entretanto, não foi testado a abordagem de utilizar estilingues gravitacionais e nem de preservar a força G da nave em abaixo de 4G, que seria o limiar saudável para os pilotos. 
+O foguete atingiu 4000 km de altitude em uma ascensão linear no momento em que seu combustível se esgotou, mas conseguiu chegar em 380.000 km (próximo da região de gravidade 0 terrestre, mas isso sem considerar o domínio gravitacional lunar) se deixado em inércia indefinida, atingindo uma altitude semelhante ao raio Terra-Lua. Entretanto, não foi testado a abordagem de utilizar estilingues gravitacionais e nem de preservar a força G da nave em abaixo de 4G, que seria o limiar saudável para os pilotos. 
 
-Mesmo que no limite, a simulação só cessou no ponto de 380.000 km por problemas computacionais, já que o programa trava nesse ponto. Contudo, a nave ainda tinha 20.000 \(\frac{m}{s}\) de velocidade no termino, significando que era necessário muito menos combustível para atingir o objetivo, resultando em uma sobra para conseguir retornar a terra posteriormente.
+Mesmo que no limite, a simulação só cessou no ponto de 380.000 km por problemas computacionais, já que o programa trava nesse ponto. Contudo, a nave ainda tinha 20.000 \(\frac{m}{s}\) de velocidade no termino, significando que era necessário muito menos combustível para atingir a altitude desejada, resultando em uma sobra que, com testes posteriores, poderiam ser suficientes para uma viagem de retorno.
 
 \section{Considerações finais}
 
