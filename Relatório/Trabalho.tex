@@ -55,7 +55,7 @@
   \begin{document}
   \section*{Simulação de lançamento de foguete}
   \begin{center}
-  Vinícius Marianno de Marque Cutolo; Pedro Lucas Miranda da Silva de Sá; Filipi Martins.
+  Vinícius Marianno de Marque Cutolo; Filipi Martins; Pedro Lucas Miranda da Silva de Sá.
   \end{center}
 \fi
 
@@ -66,9 +66,9 @@ Apresente aqui, em aproximadamente 100--200 palavras, o problema estudado, o obj
 \noindent\textbf{Palavras-chave:} equações diferenciais; modelagem matemática; aplicações; simulação física; aeroespacial.
 
 \section{Introdução}
-Durante o século XX ocorreu a corrida espacial, que foi disputada pelos Estados Unidos e antiga união soviética, como forma de demonstração de poder tecnológico entre as nações, um grande marco da corrida espacial foi o programa Apollo, onde ela tinha como objetivo levar o homem a lua, nas missões Apollo 8 a 17 foi utilizado o foguete Saturno V~\cite{nasa_saturnv_1969}, para o transporte dos astronautas ao espaço.
+Durante a Corrida Espacial, na segunda metade do século XX, a disputa entre os Estados Unidos e a antiga União Soviética gerou grandes avanços na tecnológica espacial. Um grande marco na história desse período, é o programa Apollo realizado pela NASA, que tinha como objetivo levar seres humanos à Lua e retorna-los em segurança à Terra. Nas missões Apollo 8 a 17, foi utilizado o foguete Saturno V~\cite{nasa_saturnv_1969}, para o transporte dos astronautas ao espaço. Entretanto, a realização dessas missões envolvia diversos desafios físicos e tecnológicos, especialmente durante o lançamento do foguete.
 
-Para o lançamento do foguete em direção ao espaço a modelagem da resistência do ar e da propulsão ao longo de sua trajetória se tornam cruciais para a ida ao espaço, para isso o grupo buscou uma modelagem simplificada do problema, colocando uma situação discretizada para as camadas da atmosfera e para a propulsão do foguete, utilizado as informações técnicas do foguete Saturno V, como foguete utilizado e informações coletadas de estimação da atmosfera. 
+O desafio entorno da trajetória de um foguete se é influenciada pela gravidade, resistência do ar e empuxo dos motores, além da variação de massa decorrente do consumo de propelente e da separação dos estágios. Nesse contexto, este trabalho busca desenvolver um modelo matemático simplificado de lançamento do Saturn V, considerando a variação das propriedades atmosféricas com a altitude e as diferentes fases de propulsão. Para isso, serão utilizadas aproximações por partes para as condições atmosféricas e para o funcionamento dos motores, com base nas informações técnicas do Saturn V~\cite{nasa_saturnv_1969} e em modelos de referência da atmosfera terrestre~\cite{USStandardAtmosphere1976}.
 
 \section{Fundamentação teórica}
 
@@ -251,12 +251,11 @@ O resultado da gravidade foi coerente ao longo da simulação e da realidade, ve
   \centering 
   \begin{subfigure}{0.60\linewidth} 
     \centering 
-    \includegraphics[width=\linewidth]{Figures/Grafico_gravidade_X_altura.png} 
-    \caption{Imagem 1} 
-    \label{fig:t26} 
-  \end{subfigure} 
-  \caption{Gráficos resultantes da gravidade ao longo da altura. O resultado apresenta um decaimento condizente com o raio quadrado e tem valores numéricos próximos dos reais. Fonte: Elaborado pelo grupo.} 
-  \label{fig:grav_atmo} 
+    \includegraphics[width=\linewidth]{Figures/Grafico_gravidade_X_altura.png}
+    \caption{Gráficos resultantes da gravidade ao longo da altura. O resultado apresenta um decaimento condizente com o raio quadrado e tem valores numéricos próximos dos reais. Fonte: Elaborado pelo grupo.} 
+    \label{fig:grav_atmo} 
+  \end{subfigure}
+  
 \end{figure}
 
 A atmosfera obteve uma boa aproximação em relação a temperatura e a densidade, como visto nas tabelas \ref{tab:validacao_densidade} e \ref{tab:validacao_temperatura}, obtendo-se um valor extremamente proximo em alturas como 11 km e 86 km, usando os dados de \cite{LBL_StandardAtmosphere}. Além disso, o formato resultante dos gráficos, visualizados em \ref{fig:graf_atmo}.
@@ -326,23 +325,21 @@ A atmosfera obteve uma boa aproximação em relação a temperatura e a densidad
   \centering 
   \begin{subfigure}{0.45\linewidth} 
     \centering 
-    \includegraphics[width=\linewidth]{Figures/Grafico_temperatura_X_altura.png} 
-    \caption{Imagem 1} 
+    \includegraphics[width=\linewidth]{Figures/Grafico_temperatura_X_altura.png}
     \label{fig:t26} 
   \end{subfigure} 
   \hfill 
   \begin{subfigure}{0.45\linewidth} 
     \centering 
-    \includegraphics[width=\linewidth]{Figures/Grafico_densidade_X_altura.png} 
-    \caption{Imagem 2} 
+    \includegraphics[width=\linewidth]{Figures/Grafico_densidade_X_altura.png}
     \label{fig:img2} 
   \end{subfigure} 
   \caption{Gráficos resultantes da simulação atmosférica da densidade e temperatura, evidenciando o comportamento único em cada camada da temperatura e os diferentes decaimentos da densidade a depender da camada. Fonte: Elaborado pelo grupo.} \label{fig:graf_atmo} 
 \end{figure}
 
-O foguete apresentou um arrasto característico inicial, com aceleração lenta no momento de lançamento e uma mais expressiva em camadas superiores da atmosfera, devido a atenuação da resistência do ar e a diminuição da força gravitacional. Contudo, mesmo que coerente com a realidade, ainda é necessário realizar a modelagem da dispersão do bocal para garantir que o resultado continua coerente. 
+O foguete apresentou um arrasto característico inicial, com aceleração lenta no momento de lançamento e uma mais expressiva em camadas superiores da atmosfera, devido a atenuação da resistência do ar e a diminuição da força gravitacional. Contudo, mesmo que coerente com a realidade, ainda é necessário realizar a modelagem da dispersão do bocal para garantir que o resultado continue coerente. 
 
-A temperatura na câmara de combustão parecia estável entre o ponto de motos desligado, a qual ficava a temperatura ambiente e um limiar definido pelo limite de expansão do gás. Entretanto, não foi possível conferir o resultado da pressão no exaustor, já que ele funcionava numericamente, mas apresentava inconsistências que impediam uma interpretação física robusta.
+A temperatura na câmara de combustão parecia estável entre o ponto de motor desligado, a qual ficava a temperatura ambiente e um limiar definido pelo limite de expansão do gás. Entretanto, não foi possível conferir o resultado da pressão no exaustor, já que ele funcionava numericamente, mas apresentava inconsistências que impediam uma interpretação física robusta.
 
 O foguete atingiu 4000 km de altitude em uma ascensão linear no momento em que seu combustível se esgotou, mas conseguiu chegar em 380.000 km (próximo da região de gravidade 0 terrestre, mas isso sem considerar o domínio gravitacional lunar) se deixado em inércia indefinida, atingindo uma altitude semelhante ao raio Terra-Lua. Entretanto, não foi testado a abordagem de utilizar estilingues gravitacionais e nem de preservar a força G da nave em abaixo de 4G, que seria o limiar saudável para os pilotos. 
 
@@ -359,8 +356,8 @@ A simulação apresentada é uma forma visual de estudar como todas as equaçõe
 
 \begin{itemize}[leftmargin=*]
     \item Vinícius Marianno De Marque Cutolo: descreva a contribuição.
-    \item Nome do Autor 2: descreva a contribuição.
-    \item Nome do Autor 3: descreva a contribuição.
+    \item Filipi Martins: descreva a contribuição.
+    \item Pedro Lucas Miranda da Silva de Sá: descreva a contribuição.
 \end{itemize}
 
 % ================================================================
